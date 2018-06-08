@@ -12,7 +12,7 @@ class Dice2007cjl(object):
     def __init__(self):
         """Initialize object."""
         # SIMULATION SETTINGS #
-        self.t_max = 600
+        self.t_max = 100
 
         self.__set_exogenousvariables()
         self.reset()
@@ -146,7 +146,7 @@ class Dice2007cjl(object):
         # UTILITY
         c = y - i
         u = self.L[t]*((c/self.L[t])**(1-alpha) - 1)/(1-alpha)
-        reward = u*self.R[t] # discounted utility
+        reward = (u*self.R[t])/100000 # discounted utility
 
         self.time+=1
 
@@ -155,4 +155,4 @@ class Dice2007cjl(object):
         return [self.observable_state(), reward, done]
 
     def observable_state(self):
-        return (self.K, self.M_AT, self.M_UP, self.M_LO, self.T_AT, self.T_LO)
+        return (self.K/1000, self.M_AT/1000, self.M_UP/10000, self.M_LO/100000, self.T_AT, self.T_LO, self.time)

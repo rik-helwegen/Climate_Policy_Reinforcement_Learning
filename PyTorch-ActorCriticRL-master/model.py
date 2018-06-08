@@ -51,7 +51,6 @@ class Critic(nn.Module):
 
 		x = F.relu(self.fc2(x))
 		x = self.fc3(x)
-
 		return x
 
 
@@ -95,9 +94,6 @@ class Actor(nn.Module):
 		x = F.relu(self.fc2(x))
 		x = F.relu(self.fc3(x))
 		action = F.sigmoid(self.fc4(x))
-
-		action = action * self.action_lim
-
 		return action
 
 

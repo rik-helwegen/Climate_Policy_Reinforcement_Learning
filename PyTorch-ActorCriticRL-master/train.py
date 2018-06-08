@@ -10,10 +10,11 @@ import math
 import utils
 import model
 import sys
-BATCH_SIZE = 128
-LEARNING_RATE = 0.001
+BATCH_SIZE = 64
+LEARNING_RATE_ACTOR = 0.01
+LEARNING_RATE = 0.01
 GAMMA = 0.99
-TAU = 0.001
+TAU = 0.25
 
 
 class Trainer:
@@ -35,11 +36,11 @@ class Trainer:
 
 		self.actor = model.Actor(self.state_dim, self.action_dim, self.action_lim)
 		self.target_actor = model.Actor(self.state_dim, self.action_dim, self.action_lim)
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(),LEARNING_RATE)
+		self.actor_optimizer = torch.optim.SGD(self.actor.parameters(),LEARNING_RATE_ACTOR)
 
 		self.critic = model.Critic(self.state_dim, self.action_dim)
 		self.target_critic = model.Critic(self.state_dim, self.action_dim)
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),LEARNING_RATE)
+		self.critic_optimizer = torch.optim.SGD(self.critic.parameters(),LEARNING_RATE)
 
 		utils.hard_update(self.target_actor, self.actor)
 		utils.hard_update(self.target_critic, self.critic)
@@ -62,7 +63,7 @@ class Trainer:
 		"""
 		state = Variable(torch.from_numpy(state))
 		action = self.actor.forward(state).detach()
-		new_action =np.maximum(0.,np.minimum(1.,action.data.numpy()  + np.random.normal(0, 0.2)))
+		new_action =np.maximum(0.,np.minimum(1.,action.data.numpy()  + np.random.normal(0, 0.1)))
 		return new_action
 
 	def optimize(self):
@@ -104,10 +105,10 @@ class Trainer:
 		utils.soft_update(self.target_actor, self.actor, TAU)
 		utils.soft_update(self.target_critic, self.critic, TAU)
 
-		# if self.iter % 100 == 0:
-		# 	print 'Iteration :- ', self.iter, ' Loss_actor :- ', loss_actor.data.numpy(),\
-		# 		' Loss_critic :- ', loss_critic.data.numpy()
-		# self.iter += 1
+		if self.iter % 100 == 0:
+			print('Iteration :- ', self.iter, ' Loss_actor :- ', loss_actor.data.numpy(),\
+				' Loss_critic :- ', loss_critic.data.numpy())
+		self.iter += 1
 
 	def save_models(self, episode_count):
 		"""
