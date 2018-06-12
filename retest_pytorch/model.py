@@ -99,6 +99,3 @@ class Actor(nn.Module):
 		action = action * self.action_lim
 
 		return action
-
-
-
