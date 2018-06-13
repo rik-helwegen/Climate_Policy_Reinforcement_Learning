@@ -35,7 +35,6 @@ def test_policy(model):
 	state = env.reset()
 	rewards = []
 	actions = []
-
 	for t in range(MAXSTEPS):
 		action = model(var(torch.FloatTensor(np.array(state))))
 		action = np.clip(float(action), 0, 1)
@@ -144,11 +143,12 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 if __name__ == '__main__':
 	dp = False
 	model = Actor(7, 1, 1)
-	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_149.pt'))
+	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_75.pt'))
 	policy_rewards, policy_actions = test_policy(model)
 	random_rewards, random_actions = random_policy()
 	DP_rewards = []
 	DP_actions = []
+	print(policy_rewards)
 	if dp == True:
 		f = open('results.pckl', 'rb')
 		DP_actions = pickle.load(f)
@@ -156,7 +156,6 @@ if __name__ == '__main__':
 		DP_rewards, DP_actions = test_policy_DP(DP_actions.x)
 		print("The mean and variance for normalizing the rewards")
 		print(np.mean(DP_rewards), np.std(DP_rewards))
-
 	make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp)
 
 

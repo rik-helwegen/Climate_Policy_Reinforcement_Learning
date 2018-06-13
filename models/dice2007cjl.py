@@ -153,11 +153,10 @@ class Dice2007cjl(object):
         self.time+=1
 
         done = (self.time == self.t_max)
-        if mu > 0.4 and mu < 0.6:
-            reward = 1
-
-        # elif (mu<0.4 or mu > 0.6) and self.time > 10:
-            # reward = 1
+        if mu > 0.4 and mu < 0.6 and self.time < 10:
+            reward = 0.5
+        elif (mu < 0.4 or mu > 0.6) and self.time > 10:
+            reward = 0.5
         else:
             reward = 0
         return [self.observable_state(), reward, done]
@@ -172,7 +171,9 @@ class Dice2007cjl(object):
         ('T_LO mean/std: ', 1.7812880008760066, 0.8440166034200732)
         ('time mean/std: ', 300.5, 173.2048401941085)
         """
-        return ((self.K - 10569.5)/13517.9, (self.M_AT - 1102.2)/194.7, (self.M_UP-1788.5)/231.4, (self.M_LO-19257)/593.5, (self.T_AT-2.55)/0.677, (self.T_LO-1.78)/0.844, (self.time-300.5)/173.2)
+        mean = np.mean(list(range(1, self.t_max)))
+        std = np.var(list(range(1, self.t_max)))
+        return ((self.K - 10569.5)/13517.9, (self.M_AT - 1102.2)/194.7, (self.M_UP-1788.5)/231.4, (self.M_LO-19257)/593.5, (self.T_AT-2.55)/0.677, (self.T_LO-1.78)/0.844, (self.time-mean)/std)
 
 
 

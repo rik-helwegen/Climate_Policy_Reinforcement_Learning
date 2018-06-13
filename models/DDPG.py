@@ -24,15 +24,15 @@ class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
 		super(Actor, self).__init__()
 		self.l1 = nn.Linear(state_dim, 400)
-		# self.l2 = nn.Linear(400, 300)
-		self.l3 = nn.Linear(400, action_dim)
+		self.l2 = nn.Linear(400, 300)
+		self.l3 = nn.Linear(300, action_dim)
 
 		self.max_action = max_action
 
 
 	def forward(self, x):
 		x = F.relu(self.l1(x))
-		# x = F.relu(self.l2(x))
+		x = F.relu(self.l2(x))
 		x =  F.tanh(self.l3(x))
 		return (x + 1)/2
 
@@ -58,12 +58,12 @@ class DDPG(object):
 		self.actor = Actor(state_dim, action_dim, max_action)
 		self.actor_target = Actor(state_dim, action_dim, max_action)
 		self.actor_target.load_state_dict(self.actor.state_dict())
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-2)
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-5)
 
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
 		self.critic_target.load_state_dict(self.critic.state_dict())
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), weight_decay=1e-2)
+		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-2)
 
 		if torch.cuda.is_available():
 			self.actor = self.actor.cuda()
@@ -81,7 +81,7 @@ class DDPG(object):
 		return self.actor(state).cpu().data.numpy().flatten()
 
 
-	def train(self, replay_buffer, iterations, batch_size=64, discount=0.99, tau=0.001):
+	def train(self, replay_buffer, iterations, batch_size=64, discount=0.99, tau=0.0001):
 		actor_loss_list = []
 		critic_loss_list = []
 		for it in range(iterations):
@@ -126,9 +126,9 @@ class DDPG(object):
 
 			for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
 				target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+		self.episode += 1
 		return np.mean(actor_loss_list), np.mean(critic_loss_list)
 
-		self.episode += 1
 
 
 	def save(self, filename, directory):
