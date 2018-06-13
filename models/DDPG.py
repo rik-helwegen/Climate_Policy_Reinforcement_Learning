@@ -144,8 +144,8 @@ class DDPG(object):
 
 
 	def save(self, filename, directory):
-		torch.save(self.actor.state_dict(), '%s/%s_actor.pt' % (directory, filename))
-		torch.save(self.critic.state_dict(), '%s/%s_critic.pt' % (directory, filename))
+		torch.save(self.actor.state_dict(), '%s/%s_actor_%i.pt' % (directory, filename, self.episode))
+		torch.save(self.critic.state_dict(), '%s/%s_critic_%i.pt' % (directory, filename, self.episode))
 
 
 	def load(self, filename, directory):
