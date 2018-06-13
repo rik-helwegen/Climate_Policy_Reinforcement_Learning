@@ -50,6 +50,13 @@ def test_policy_DP(DP_actions):
 	rewards = []
 	counter = 0
 	actions = []
+	K_list = []
+	M_AT_list = []
+	M_UP_list = []
+	M_LO_list = []
+	T_AT_list = []
+	T_LO_list = []
+	time_list = []
 	for step in range(len(DP_actions)):
 		# 10 is the stepsize
 		for t in range(10):
@@ -61,9 +68,24 @@ def test_policy_DP(DP_actions):
 			else:
 				action = DP_actions[step] 
 			new_state, reward, done  = env.step(action)
+			(K, M_AT, M_UP, M_LO, T_AT, T_LO, time) = new_state
+			K_list.append(K)
+			M_AT_list.append(M_AT)
+			M_UP_list.append(M_UP)
+			M_LO_list.append(M_LO)
+			T_AT_list.append(T_AT)
+			T_LO_list.append(T_LO)
+			time_list.append(time)
 			actions.append(action)
 			rewards.append(reward)
 			counter += 1
+	print("K mean/std: ", np.mean(K_list), np.std(K_list))
+	print("M_AT mean/std: ", np.mean(M_AT_list), np.std(M_AT_list))
+	print("M_UP mean/std: ",np.mean(M_UP_list), np.std(M_UP_list))
+	print("M_LO mean/std: ",np.mean(M_LO_list), np.std(M_LO_list))
+	print("T_AT mean/std: ",np.mean(T_AT_list), np.std(T_AT_list))
+	print("T_LO mean/std: ",np.mean(T_LO_list), np.std(T_LO_list))
+	print("time mean/std: ",np.mean(time_list), np.std(time_list))
 	return rewards, actions
 
 def random_policy():

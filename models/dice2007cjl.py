@@ -149,7 +149,6 @@ class Dice2007cjl(object):
         reward = u*self.R[t] # discounted utility
         # NORMALIZED REWARD FUNCTioN mean = -76567.6 , std = 192489.4
         reward = (reward - - 76567.6)/192489.4
-        print(reward)
 
         self.time+=1
 
@@ -158,4 +157,18 @@ class Dice2007cjl(object):
         return [self.observable_state(), reward, done]
 
     def observable_state(self):
-        return (self.K, self.M_AT, self.M_UP, self.M_LO, self.T_AT, self.T_LO, self.time)
+        """NORMALIZING"
+        ('K mean/std: ', 10569.456015292615, 13517.8509280747)
+        ('M_AT mean/std: ', 1102.2372271056897, 194.68568017507502)
+        ('M_UP mean/std: ', 1788.4659867777857, 231.44764116371329)
+        ('M_LO mean/std: ', 19257.84342822024, 593.448704095657)
+        ('T_AT mean/std: ', 2.5481548915224796, 0.6761288573217639)
+        ('T_LO mean/std: ', 1.7812880008760066, 0.8440166034200732)
+        ('time mean/std: ', 300.5, 173.2048401941085)
+        """
+        return ((self.K - 10569.5)/13517.9, (self.M_AT - 1102.2)/194.7, (self.M_UP-1788.5)/231.4, (self.M_LO-19257)/593.5, (self.T_AT-2.55)/0.677, (self.T_LO-1.78)/0.844, (self.time-300.5)/173.2)
+
+
+
+
+

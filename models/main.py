@@ -10,6 +10,7 @@ import OurDDPG
 import DDPG
 from dice2007cjl import Dice2007cjl as Dice
 import matplotlib.pyplot as plt
+import sys
 
 
 
@@ -30,7 +31,6 @@ def evaluate_policy(policy, eval_episodes=10):
 	print "Evaluation over %d episodes: %f" % (eval_episodes, avg_reward)
 	print "---------------------------------------"
 	return avg_reward
-
 
 if __name__ == "__main__":
 
@@ -140,7 +140,6 @@ if __name__ == "__main__":
 
 		# Store data in replay buffer
 		replay_buffer.add((obs, new_obs, action, reward, done_bool))
-
 		obs = new_obs
 
 		episode_timesteps += 1
