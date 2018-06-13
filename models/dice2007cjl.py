@@ -12,7 +12,7 @@ class Dice2007cjl(object):
     def __init__(self):
         """Initialize object."""
         # SIMULATION SETTINGS #
-        self.t_max = 600
+        self.t_max = 20
 
         self.__set_exogenousvariables()
         self.reset()
@@ -153,7 +153,13 @@ class Dice2007cjl(object):
         self.time+=1
 
         done = (self.time == self.t_max)
+        if mu > 0.4 and mu < 0.6:
+            reward = 1
 
+        # elif (mu<0.4 or mu > 0.6) and self.time > 10:
+            # reward = 1
+        else:
+            reward = 0
         return [self.observable_state(), reward, done]
 
     def observable_state(self):

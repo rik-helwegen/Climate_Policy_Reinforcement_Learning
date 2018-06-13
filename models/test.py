@@ -21,7 +21,7 @@ import torch.nn.functional as F
 import sys
 from demo import *
 
-MAXSTEPS = 600
+MAXSTEPS = 20
 
 
 def var(tensor, volatile=False):
@@ -40,6 +40,7 @@ def test_policy(model):
 		action = model(var(torch.FloatTensor(np.array(state))))
 		action = np.clip(float(action), 0, 1)
 		new_state, reward, done  = env.step(action)
+		state = new_state
 		actions.append(action)
 		rewards.append(reward)
 	return rewards, actions
@@ -68,6 +69,7 @@ def test_policy_DP(DP_actions):
 			else:
 				action = DP_actions[step] 
 			new_state, reward, done  = env.step(action)
+			state = new_state
 			(K, M_AT, M_UP, M_LO, T_AT, T_LO, time) = new_state
 			K_list.append(K)
 			M_AT_list.append(M_AT)
@@ -96,11 +98,12 @@ def random_policy():
 	for t in range(MAXSTEPS):
 		action = np.random.uniform()
 		new_state, reward, done  = env.step(action)
+		state = new_state
 		rewards.append(reward)
 		actions.append(action)
 	return rewards, actions
 
-def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions):
+def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp=False):
 	print("The sum of rewards of the TRAINED policy is: ", sum(policy_rewards))
 	print("The sum of rewards of the RANDOM policy is: ", sum(random_rewards))
 	print("The sum of rewards of the DP policy is: ", sum(DP_rewards))
@@ -125,31 +128,35 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 	plt.plot(timevec, policy_actions)
 	plt.title('Mu (action) for trained policy')
 
+	if dp == True:
+		plt.subplot(3,2,5)
+		plt.plot(timevec, DP_rewards)
+		plt.title("Rewards for DP policy")
 
-	plt.subplot(3,2,5)
-	plt.plot(timevec, DP_rewards)
-	plt.title("Rewards for DP policy")
 
-
-	plt.subplot(3,2,6)
-	plt.plot(timevec, DP_actions)
-	plt.title('Mu (action) for DP policy')
+		plt.subplot(3,2,6)
+		plt.plot(timevec, DP_actions)
+		plt.title('Mu (action) for DP policy')
 
 	plt.show()
 	
 
 if __name__ == '__main__':
+	dp = False
 	model = Actor(7, 1, 1)
-	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_2.pt'))
+	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_149.pt'))
 	policy_rewards, policy_actions = test_policy(model)
 	random_rewards, random_actions = random_policy()
-	f = open('results.pckl', 'rb')
-	DP_actions = pickle.load(f)
-	f.close()
-	DP_rewards, DP_actions = test_policy_DP(DP_actions.x)
-	print("The mean and variance for normalizing the rewards")
-	print(np.mean(DP_rewards), np.std(DP_rewards))
+	DP_rewards = []
+	DP_actions = []
+	if dp == True:
+		f = open('results.pckl', 'rb')
+		DP_actions = pickle.load(f)
+		f.close()
+		DP_rewards, DP_actions = test_policy_DP(DP_actions.x)
+		print("The mean and variance for normalizing the rewards")
+		print(np.mean(DP_rewards), np.std(DP_rewards))
 
-	make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions)
+	make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp)
 
 

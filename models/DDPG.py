@@ -24,15 +24,15 @@ class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
 		super(Actor, self).__init__()
 		self.l1 = nn.Linear(state_dim, 400)
-		self.l2 = nn.Linear(400, 300)
-		self.l3 = nn.Linear(300, action_dim)
+		# self.l2 = nn.Linear(400, 300)
+		self.l3 = nn.Linear(400, action_dim)
 		
 		self.max_action = max_action
 
 	
 	def forward(self, x):
 		x = F.relu(self.l1(x))
-		x = F.relu(self.l2(x))
+		# x = F.relu(self.l2(x))
 		x =  F.tanh(self.l3(x)) 
 		return (x + 1)/2 
 
@@ -58,7 +58,7 @@ class DDPG(object):
 		self.actor = Actor(state_dim, action_dim, max_action)
 		self.actor_target = Actor(state_dim, action_dim, max_action)
 		self.actor_target.load_state_dict(self.actor.state_dict())
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-2)
 
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
