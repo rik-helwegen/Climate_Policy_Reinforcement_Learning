@@ -50,12 +50,12 @@ def test_policy_DP(DP_actions):
 	rewards = []
 	counter = 0
 	actions = []
-	for step in range(len(coen_actions)):
+	for step in range(len(DP_actions)):
 		# 10 is the stepsize
 		for t in range(10):
 			if t > 0:
 				if step == 59:
-					action = DP[step] + t * ((DP_actions[step] - DP_actions[step - 1])/10)
+					action = DP_actions[step] + t * ((DP_actions[step] - DP_actions[step - 1])/10)
 				else: 
 					action = DP_actions[step] + t * ((DP_actions[step + 1] - DP_actions[step])/10)
 			else:
@@ -117,8 +117,8 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 	
 
 if __name__ == '__main__':
-	model = Actor(6, 1, 1)
-	# model.load_state_dict(torch.load('mytraining.pt'))
+	model = Actor(7, 1, 1)
+	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor.pt'))
 	policy_rewards, policy_actions = test_policy(model)
 	random_rewards, random_actions = random_policy()
 	f = open('results.pckl', 'rb')
