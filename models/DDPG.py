@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 import utils
 
@@ -73,6 +74,7 @@ class DDPG(object):
 
 		self.criterion = nn.MSELoss()
 		self.state_dim = state_dim
+		self.episode = 0
 
 
 	def select_action(self, state):
@@ -82,6 +84,8 @@ class DDPG(object):
 
 	def train(self, replay_buffer, iterations, batch_size=64, discount=0.99, tau=0.001):
 
+		actor_loss_plot = []
+		critic_loss_plot = []
 		for it in range(iterations):
 
 			# Sample replay buffer 
@@ -102,6 +106,7 @@ class DDPG(object):
 
 			# Compute critic loss
 			critic_loss = self.criterion(current_Q, target_Q)
+			critic_loss_plot.append(float(critic_loss))
 
 			# Optimize the critic
 			self.critic_optimizer.zero_grad()
@@ -110,6 +115,7 @@ class DDPG(object):
 
 			# Compute actor loss
 			actor_loss = -self.critic(state, self.actor(state)).mean()
+			actor_loss_plot.append(float(actor_loss))
 			
 			# Optimize the actor 
 			self.actor_optimizer.zero_grad()
@@ -122,6 +128,19 @@ class DDPG(object):
 
 			for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
 				target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+		plt.figure()
+		x = list(range(0, iterations))
+		plt.subplot(1,2,1)
+		plt.plot(x, actor_loss_plot)
+		plt.title("Actor loss per episode")
+
+		plt.subplot(1,2,2)
+		plt.plot(x, critic_loss_plot)
+		plt.title("Cricic loss per episode")
+		filename = "results/figures/loss/Actor_Critic_loss_" + str(self.episode)
+		plt.savefig(filename)
+
+		self.episode += 1
 
 
 	def save(self, filename, directory):

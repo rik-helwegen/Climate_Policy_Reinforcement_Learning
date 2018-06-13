@@ -9,6 +9,8 @@ import TD3
 import OurDDPG
 import DDPG
 from dice2007cjl import Dice2007cjl as Dice
+import matplotlib.pyplot as plt
+
 
 
 # Runs policy for X episodes and returns average reward
@@ -83,9 +85,10 @@ if __name__ == "__main__":
 	total_timesteps = 0
 	timesteps_since_eval = 0
 	episode_num = 0
+	average_reward = []
+	all_rewards = []
 	# first timestep done=True such that initialization runs
 	done = True
-
 	while total_timesteps < args.max_timesteps:
 
 		# Done = true for first and last timestep
@@ -106,6 +109,13 @@ if __name__ == "__main__":
 				if True: policy.save(file_name, directory="./pytorch_models")
 				np.save("./results/%s" % (file_name), evaluations)
 
+			if episode_num > 0 and episode_num%2==0:
+				plt.figure()
+				x = list(range(0, total_timesteps))
+				plt.plot(x, average_reward)
+				plt.title("Average reward")
+				filename = "results/figures/reward/average_reward" + str(episode_num)
+				plt.savefig(filename)
 			# Reset environment
 			obs = env.reset()
 			done = False
@@ -125,6 +135,8 @@ if __name__ == "__main__":
 		new_obs, reward, done = env.step(action)
 		done_bool = 0 if episode_timesteps + 1 == env.t_max else float(done)
 		episode_reward += reward
+		all_rewards.append(reward)
+		average_reward.append(np.mean(all_rewards))
 
 		# Store data in replay buffer
 		replay_buffer.add((obs, new_obs, action, reward, done_bool))
