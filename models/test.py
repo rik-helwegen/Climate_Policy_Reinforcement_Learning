@@ -1,3 +1,4 @@
+import pickle
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 import numpy as np
