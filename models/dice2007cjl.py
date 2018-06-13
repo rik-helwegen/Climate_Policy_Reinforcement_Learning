@@ -147,6 +147,9 @@ class Dice2007cjl(object):
         c = y - i
         u = self.L[t]*((c/self.L[t])**(1-alpha) - 1)/(1-alpha)
         reward = u*self.R[t] # discounted utility
+        # NORMALIZED REWARD FUNCTioN mean = -76567.6 , std = 192489.4
+        reward = (reward - - 76567.6)/192489.4
+        print(reward)
 
         self.time+=1
 

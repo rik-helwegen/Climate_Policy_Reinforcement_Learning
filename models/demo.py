@@ -24,10 +24,12 @@ def find_optimal_policy(stepsize=10):
         env.reset()
         utility = 0
         # execute run
+        list_of_rewards = []
         for step in range(n_steps):
             for _ in range(stepsize):
                 _, r, _ = env.step(muvec[step])
                 utility += r
+                list_of_rewards.append(r)
         # return minus utility (since scipy offers minimize)
         return -(utility/194)+381800  # scale to ease optimization
 
