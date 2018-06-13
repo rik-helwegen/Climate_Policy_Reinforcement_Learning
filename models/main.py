@@ -152,17 +152,19 @@ if __name__ == "__main__":
 		timesteps_since_eval += 1
 
 		# plot results of loss development
-		plt.figure()
-		x = list(range(0, len(actor_loss_dev)))
-		plt.subplot(1,2,1)
-		plt.plot(x, actor_loss_dev)
-		plt.title("avg. Actor loss dev over episodes")
+		# save loss development as image.
+		if total_timesteps%20==0:
+			plt.figure()
+			x = list(range(0, len(actor_loss_dev)))
+			plt.subplot(1,2,1)
+			plt.plot(x, actor_loss_dev)
+			plt.title("avg. Actor loss dev over episodes")
 
-		plt.subplot(1,2,2)
-		plt.plot(x, critic_loss_dev)
-		plt.title("avg. Cricic loss dev over episodes")
-		filename = "results/figures/loss_development"
-		plt.savefig(filename)
+			plt.subplot(1,2,2)
+			plt.plot(x, critic_loss_dev)
+			plt.title("avg. Cricic loss dev over episodes")
+			filename = "results/figures/loss_development"
+			plt.savefig(filename)
 
 	# Final evaluation
 	evaluations.append(evaluate_policy(policy))
