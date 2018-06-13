@@ -19,7 +19,7 @@ def evaluate_policy(policy, eval_episodes=10):
 		done = False
 		while not done:
 			action = policy.select_action(np.array(obs))
-			obs, reward, done, _ = env.step(action)
+			obs, reward, done = env.step(action)
 			avg_reward += reward
 
 	avg_reward /= eval_episodes
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy_name", default="DDPG")					# Policy name
-	parser.add_argument("--env_name", default="DICE")			# Dynamic integrated climate economic model
+	parser.add_argument("--env_name", default="DICE")					# Dynamic integrated climate economic model
 	parser.add_argument("--seed", default=0, type=int)					# Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=1e4, type=int)		# How many time steps purely random policy is run for
 	parser.add_argument("--eval_freq", default=5e3, type=float)			# How often (time steps) we evaluate
@@ -63,13 +63,12 @@ if __name__ == "__main__":
 	env = Dice()
 
 	# Set seeds
-	env.seed(args.seed)
 	torch.manual_seed(args.seed)
 	np.random.seed(args.seed)
 
-	state_dim = env.observation_space.shape[0]
-	action_dim = env.action_space.shape[0]
-	max_action = int(env.action_space.high[0])
+	state_dim = 7 # The six parameters  + The current time
+	action_dim = 1 # Predicting mu
+	max_action = 1 # Action space lies between 0 and 1
 
 	# Initialize policy
 	if args.policy_name == "TD3": policy = TD3.TD3(state_dim, action_dim, max_action)
@@ -116,15 +115,15 @@ if __name__ == "__main__":
 
 		# Select action randomly or according to policy
 		if total_timesteps < args.start_timesteps:
-			action = env.action_space.sample()
+			action = np.random.uniform()
 		else:
 			action = policy.select_action(np.array(obs))
 			if args.expl_noise != 0:
 				action = (action + np.random.normal(0, args.expl_noise, size=env.action_space.shape[0])).clip(env.action_space.low, env.action_space.high)
 
 		# Perform action
-		new_obs, reward, done, _ = env.step(action)
-		done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
+		new_obs, reward, done = env.step(action)
+		done_bool = 0 if episode_timesteps + 1 == env.t_max else float(done)
 		episode_reward += reward
 
 		# Store data in replay buffer

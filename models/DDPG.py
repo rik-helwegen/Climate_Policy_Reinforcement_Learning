@@ -33,8 +33,8 @@ class Actor(nn.Module):
 	def forward(self, x):
 		x = F.relu(self.l1(x))
 		x = F.relu(self.l2(x))
-		x = self.max_action * F.tanh(self.l3(x)) 
-		return x 
+		x =  F.tanh(self.l3(x)) 
+		return (x + 1)/2 
 
 
 class Critic(nn.Module):
