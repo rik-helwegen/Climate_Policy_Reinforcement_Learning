@@ -155,4 +155,4 @@ class Dice2007cjl(object):
         return [self.observable_state(), reward, done]
 
     def observable_state(self):
-        return (self.K, self.M_AT, self.M_UP, self.M_LO, self.T_AT, self.T_LO)
+        return (self.K, self.M_AT, self.M_UP, self.M_LO, self.T_AT, self.T_LO, self.time)
