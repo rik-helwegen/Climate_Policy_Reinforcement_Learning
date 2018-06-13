@@ -26,15 +26,15 @@ class Actor(nn.Module):
 		self.l1 = nn.Linear(state_dim, 400)
 		# self.l2 = nn.Linear(400, 300)
 		self.l3 = nn.Linear(400, action_dim)
-		
+
 		self.max_action = max_action
 
-	
+
 	def forward(self, x):
 		x = F.relu(self.l1(x))
 		# x = F.relu(self.l2(x))
-		x =  F.tanh(self.l3(x)) 
-		return (x + 1)/2 
+		x =  F.tanh(self.l3(x))
+		return (x + 1)/2
 
 
 class Critic(nn.Module):
@@ -50,7 +50,7 @@ class Critic(nn.Module):
 		x = F.relu(self.l1(x))
 		x = F.relu(self.l2(torch.cat([x, u], 1)))
 		x = self.l3(x)
-		return x 
+		return x
 
 
 class DDPG(object):
@@ -63,7 +63,7 @@ class DDPG(object):
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
 		self.critic_target.load_state_dict(self.critic.state_dict())
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), weight_decay=1e-2)		
+		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), weight_decay=1e-2)
 
 		if torch.cuda.is_available():
 			self.actor = self.actor.cuda()
@@ -82,12 +82,11 @@ class DDPG(object):
 
 
 	def train(self, replay_buffer, iterations, batch_size=64, discount=0.99, tau=0.001):
-
-		actor_loss_plot = []
-		critic_loss_plot = []
+		actor_loss_list = []
+		critic_loss_list = []
 		for it in range(iterations):
 
-			# Sample replay buffer 
+			# Sample replay buffer
 			x, y, u, r, d = replay_buffer.sample(batch_size)
 			state = var(torch.FloatTensor(x))
 			action = var(torch.FloatTensor(u))
@@ -105,18 +104,18 @@ class DDPG(object):
 
 			# Compute critic loss
 			critic_loss = self.criterion(current_Q, target_Q)
-			critic_loss_plot.append(float(critic_loss))
 
 			# Optimize the critic
 			self.critic_optimizer.zero_grad()
 			critic_loss.backward()
 			self.critic_optimizer.step()
+			critic_loss_list.append(float(critic_loss))
 
 			# Compute actor loss
 			actor_loss = -self.critic(state, self.actor(state)).mean()
-			actor_loss_plot.append(float(actor_loss))
-			
-			# Optimize the actor 
+			actor_loss_list.append(float(actor_loss))
+
+			# Optimize the actor
 			self.actor_optimizer.zero_grad()
 			actor_loss.backward()
 			self.actor_optimizer.step()
@@ -127,17 +126,7 @@ class DDPG(object):
 
 			for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
 				target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-		plt.figure()
-		x = list(range(0, iterations))
-		plt.subplot(1,2,1)
-		plt.plot(x, actor_loss_plot)
-		plt.title("Actor loss per episode")
-
-		plt.subplot(1,2,2)
-		plt.plot(x, critic_loss_plot)
-		plt.title("Cricic loss per episode")
-		filename = "results/figures/loss/Actor_Critic_loss_" + str(self.episode)
-		plt.savefig(filename)
+		return np.mean(actor_loss_list), np.mean(critic_loss_list)
 
 		self.episode += 1
 

@@ -87,6 +87,8 @@ if __name__ == "__main__":
 	episode_num = 0
 	average_reward = []
 	all_rewards = []
+	actor_loss_dev = []
+	critic_loss_dev = []
 	# first timestep done=True such that initialization runs
 	done = True
 	while total_timesteps < args.max_timesteps:
@@ -99,8 +101,9 @@ if __name__ == "__main__":
 				if args.policy_name == "TD3":
 					policy.train(replay_buffer, episode_timesteps, args.batch_size, args.discount, args.tau, args.policy_noise, args.noise_clip, args.policy_freq)
 				else:
-					policy.train(replay_buffer, episode_timesteps, args.batch_size, args.discount, args.tau)
-
+					actor_loss, critic_loss = policy.train(replay_buffer, episode_timesteps, args.batch_size, args.discount, args.tau)
+				actor_loss_dev.append(actor_loss)
+				critic_loss_dev.append(critic_loss)
 			# Evaluate episode
 			if timesteps_since_eval >= args.eval_freq:
 				timesteps_since_eval %= args.eval_freq
@@ -122,7 +125,7 @@ if __name__ == "__main__":
 			episode_timesteps = 0
 			episode_num += 1
 
-		if True and episode_num % 5 == 0: 
+		if True and episode_num % 5 == 0:
 			policy.save(file_name, directory="./pytorch_models")
 			np.save("./results/%s" % (file_name), evaluations)
 		# Select action randomly or according to policy
@@ -147,6 +150,19 @@ if __name__ == "__main__":
 		episode_timesteps += 1
 		total_timesteps += 1
 		timesteps_since_eval += 1
+
+		# plot results of loss development
+		plt.figure()
+		x = list(range(0, len(actor_loss_dev)))
+		plt.subplot(1,2,1)
+		plt.plot(x, actor_loss_dev)
+		plt.title("avg. Actor loss dev over episodes")
+
+		plt.subplot(1,2,2)
+		plt.plot(x, critic_loss_dev)
+		plt.title("avg. Cricic loss dev over episodes")
+		filename = "results/figures/loss_development"
+		plt.savefig(filename)
 
 	# Final evaluation
 	evaluations.append(evaluate_policy(policy))
