@@ -142,14 +142,17 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 
 
 if __name__ == '__main__':
+	evaluate_episode_number = sys.argv[1]
 	# show results of dp, works only for t_max=600
 	dp = False
 	model = Actor(7, 1, 1)
-	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_10.pt'))
-	# test policy with trained actor model
-	policy_rewards, policy_actions = test_policy(model)
+	# Adjust model to load:
+	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_' + str(evaluate_episode_number) + '.pt'))
+
 	# random model, does not need actor model since policy is random
 	random_rewards, random_actions = random_policy()
+	# test policy with trained actor model
+	policy_rewards, policy_actions = test_policy(model)
 	DP_rewards = []
 	DP_actions = []
 	print(policy_rewards)
