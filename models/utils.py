@@ -25,3 +25,23 @@ class ReplayBuffer(object):
 			d.append(np.array(D, copy=False))
 
 		return np.array(x), np.array(y), np.array(u).reshape(batch_size, 1), np.array(r).reshape(-1, 1), np.array(d).reshape(-1, 1)
+
+
+# Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
+class OrnsteinUhlenbeckActionNoise:
+
+	def __init__(self, action_dim, mu = 0, theta = 0.15, sigma = 0.2):
+		self.action_dim = action_dim
+		self.mu = mu
+		self.theta = theta
+		self.sigma = sigma
+		self.X = np.ones(self.action_dim) * self.mu
+
+	def reset(self):
+		self.X = np.ones(self.action_dim) * self.mu
+
+	def sample(self):
+		dx = self.theta * (self.mu - self.X)
+		dx = dx + self.sigma * np.random.randn(len(self.X))
+		self.X = self.X + dx
+		return self.X

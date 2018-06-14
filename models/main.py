@@ -38,7 +38,7 @@ if __name__ == "__main__":
 	parser.add_argument("--policy_name", default="DDPG")					# Policy name
 	parser.add_argument("--env_name", default="DICE")					# Dynamic integrated climate economic model
 	parser.add_argument("--seed", default=0, type=int)					# Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=2000, type=int)	# How many time steps purely random policy is run for
+	parser.add_argument("--start_timesteps", default=1000, type=int)	# How many time steps purely random policy is run for
 	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=float)		# Max time steps to run environment for
 	parser.add_argument("--save_models", action="store_true")			# Whether or not models are saved
@@ -92,6 +92,9 @@ if __name__ == "__main__":
 	critic_loss_dev = []
 	# first timestep done=True such that initialization runs
 	done = True
+
+	ouNoise = utils.OrnsteinUhlenbeckActionNoise(action_dim)
+
 	while total_timesteps < args.max_timesteps:
 
 		# Done = true for first and last timestep
@@ -109,13 +112,13 @@ if __name__ == "__main__":
 			if timesteps_since_eval >= args.eval_freq:
 				timesteps_since_eval %= args.eval_freq
 				evaluations.append(evaluate_policy(policy))
-			if True and episode_num % 5 == 0:
+			if True and episode_num % 50 == 0:
 				policy.save(file_name, directory="./pytorch_models")
 				np.save("./results/%s" % (file_name), evaluations)
 
 
 
-			if episode_num > 0 and episode_num%2==0:
+			if episode_num > 0 and episode_num%50==0:
 				plt.figure()
 				x = list(range(0, total_timesteps))
 				plt.plot(x, average_reward)
@@ -134,10 +137,15 @@ if __name__ == "__main__":
 		if total_timesteps < args.start_timesteps:
 			action = np.random.uniform()
 		else:
-			action = policy.select_action(np.array(obs))
+			action = policy.select_action(np.array(obs))		
 			if args.expl_noise != 0:
-				action = (action + np.random.normal(0, args.expl_noise, size=1)).clip(0, 1)
+				action = (action + ouNoise.sample()).clip(0, 1)
 				action = action[0]
+
+				# previous noise
+				# action = (action + np.random.normal(0, args.expl_noise, size=1)).clip(0, 1)
+				# action = action[0]
+
 		# Perform action
 		new_obs, reward, done = env.step(action)
 		done_bool = 0 if episode_timesteps + 1 == env.t_max else float(done)
