@@ -13,6 +13,8 @@ class ReplayBuffer(object):
 		self.storage.append(data)
 
 	def sample(self, batch_size=100):
+		if len(self.storage) > 100000:
+			self.storage = self.storage[-100000:]
 		ind = np.random.randint(0, len(self.storage), size=batch_size)
 		x, y, u, r, d = [], [], [], [], []
 
