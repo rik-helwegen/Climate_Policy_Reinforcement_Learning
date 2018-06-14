@@ -148,11 +148,13 @@ class Dice2007cjl(object):
         u = self.L[t]*((c/self.L[t])**(1-alpha) - 1)/(1-alpha)
         reward = u*self.R[t] # discounted utility
         # NORMALIZED REWARD FUNCTioN mean = -76567.6 , std = 192489.4
-        reward = (reward - - 76567.6)/192489.4
+        reward = (reward - (-76567.6))/192489.4
 
         self.time+=1
 
         done = (self.time == self.t_max)
+
+        # manual reward function to test if model trains
         if mu > 0.4 and mu < 0.6 and self.time < 10:
             reward = 0.5
         elif (mu < 0.4 or mu > 0.6) and self.time > 10:
@@ -174,8 +176,3 @@ class Dice2007cjl(object):
         mean = np.mean(list(range(1, self.t_max)))
         std = np.var(list(range(1, self.t_max)))
         return ((self.K - 10569.5)/13517.9, (self.M_AT - 1102.2)/194.7, (self.M_UP-1788.5)/231.4, (self.M_LO-19257)/593.5, (self.T_AT-2.55)/0.677, (self.T_LO-1.78)/0.844, (self.time-mean)/std)
-
-
-
-
-

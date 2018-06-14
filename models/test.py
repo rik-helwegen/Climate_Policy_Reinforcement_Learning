@@ -21,6 +21,7 @@ import torch.nn.functional as F
 import sys
 from demo import *
 
+# make sure this is the same as t_max in dice2007cjl
 MAXSTEPS = 20
 
 
@@ -63,10 +64,10 @@ def test_policy_DP(DP_actions):
 			if t > 0:
 				if step == 59:
 					action = DP_actions[step] + t * ((DP_actions[step] - DP_actions[step - 1])/10)
-				else: 
+				else:
 					action = DP_actions[step] + t * ((DP_actions[step + 1] - DP_actions[step])/10)
 			else:
-				action = DP_actions[step] 
+				action = DP_actions[step]
 			new_state, reward, done  = env.step(action)
 			state = new_state
 			(K, M_AT, M_UP, M_LO, T_AT, T_LO, time) = new_state
@@ -138,13 +139,16 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 		plt.title('Mu (action) for DP policy')
 
 	plt.show()
-	
+
 
 if __name__ == '__main__':
+	# show results of dp, works only for t_max=600
 	dp = False
 	model = Actor(7, 1, 1)
-	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_75.pt'))
+	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_10.pt'))
+	# test policy with trained actor model
 	policy_rewards, policy_actions = test_policy(model)
+	# random model, does not need actor model since policy is random
 	random_rewards, random_actions = random_policy()
 	DP_rewards = []
 	DP_actions = []
@@ -157,5 +161,3 @@ if __name__ == '__main__':
 		print("The mean and variance for normalizing the rewards")
 		print(np.mean(DP_rewards), np.std(DP_rewards))
 	make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp)
-
-

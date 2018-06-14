@@ -14,10 +14,12 @@ import utils
 
 
 def var(tensor, volatile=False):
-	if torch.cuda.is_available():
-		return Variable(tensor, volatile=volatile).cuda()
-	else:
-		return Variable(tensor, volatile=volatile)
+	return Variable(tensor, volatile=volatile)
+	# use cuda if is_available
+	# if torch.cuda.is_available():
+	# 	return Variable(tensor, volatile=volatile).cuda()
+	# else:
+	# 	return Variable(tensor, volatile=volatile)
 
 
 class Actor(nn.Module):
@@ -65,11 +67,12 @@ class DDPG(object):
 		self.critic_target.load_state_dict(self.critic.state_dict())
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-2)
 
-		if torch.cuda.is_available():
-			self.actor = self.actor.cuda()
-			self.actor_target = self.actor_target.cuda()
-			self.critic = self.critic.cuda()
-			self.critic_target = self.critic_target.cuda()
+		# use cuda if available
+		# if torch.cuda.is_available():
+		# 	self.actor = self.actor.cuda()
+		# 	self.actor_target = self.actor_target.cuda()
+		# 	self.critic = self.critic.cuda()
+		# 	self.critic_target = self.critic_target.cuda()
 
 		self.criterion = nn.MSELoss()
 		self.state_dim = state_dim
