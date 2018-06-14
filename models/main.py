@@ -37,6 +37,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--policy_name", default="DDPG")					# Policy name
 	parser.add_argument("--env_name", default="DICE")					# Dynamic integrated climate economic model
+	parser.add_argument("--das", default=0)							# Wheter using Das4 or not(0=not 1==Using das4)
 	parser.add_argument("--seed", default=0, type=int)					# Sets Gym, PyTorch and Numpy seeds
 	parser.add_argument("--start_timesteps", default=1000, type=int)	# How many time steps purely random policy is run for
 	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
@@ -118,7 +119,7 @@ if __name__ == "__main__":
 
 
 
-			if episode_num > 0 and episode_num%50==0:
+			if episode_num > 0 and episode_num%50==0 and args.das == 0:
 				plt.figure()
 				x = list(range(0, total_timesteps))
 				plt.plot(x, average_reward)
@@ -163,7 +164,7 @@ if __name__ == "__main__":
 
 		# plot results of loss development
 		# save loss development as image.
-		if total_timesteps%20==0:
+		if total_timesteps%20==0 and args.das == 0:
 			plt.figure()
 			x = list(range(0, len(actor_loss_dev)))
 			plt.subplot(1,2,1)
