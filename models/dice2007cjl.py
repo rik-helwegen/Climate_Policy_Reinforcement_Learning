@@ -12,7 +12,7 @@ class Dice2007cjl(object):
     def __init__(self):
         """Initialize object."""
         # SIMULATION SETTINGS #
-        self.t_max = 20
+        self.t_max = 600
 
         self.__set_exogenousvariables()
         self.reset()
@@ -155,12 +155,6 @@ class Dice2007cjl(object):
         done = (self.time == self.t_max)
 
         # manual reward function to test if model trains
-        if self.time <= 10 and mu < 0.5:
-            reward = 0.8
-        elif self.time > 10 and mu >= 0.5:
-            reward = 0.8
-        else:
-            reward = 0
         return [self.observable_state(), reward, done]
 
     def observable_state(self):
