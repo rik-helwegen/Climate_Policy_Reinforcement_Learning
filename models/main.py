@@ -114,19 +114,19 @@ if __name__ == "__main__":
 			# Evaluate episode
 			if timesteps_since_eval >= args.eval_freq:
 				timesteps_since_eval %= args.eval_freq
-				evaluations.append(evaluate_policy(policy))
+			evaluations.append(evaluate_policy(policy))
 			if True and episode_num % 10 == 0:
 				policy.save(file_name, directory="./pytorch_models")
 				np.save("./results/%s" % (file_name), evaluations)
 
 
 
-			if episode_num > 0 and episode_num%10==0 and args.das == 0:
+			if episode_num > 0 and episode_num%1==0 and args.das == 0:
 				plt.figure()
-				x = list(range(0, total_timesteps))
-				plt.plot(x, average_reward)
+				x = list(range(0, episode_num))
+				plt.plot(x, evaluations)
 				plt.title("Average reward")
-				filename = "results/figures/reward/average_reward" + str(episode_num)
+				filename = "results/figures/reward/average_reward"
 				plt.savefig(filename)
 				plt.close()
 			# Reset environment
