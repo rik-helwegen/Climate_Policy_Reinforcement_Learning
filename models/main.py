@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import sys
 
 
-
 # Runs policy for X episodes and returns average reward
 def evaluate_policy(policy, eval_episodes=10):
 	avg_reward = 0.
@@ -53,9 +52,10 @@ if __name__ == "__main__":
 	parser.add_argument("--policy_noise", default=0.2, type=float)		# Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5, type=float)		# Range to clip target policy noise
 	parser.add_argument("--policy_freq", default=2, type=int)			# Frequency of delayed policy updates
+	parser.add_argument("--user", default='', type=str)
 	args = parser.parse_args()
 
-	file_name = "%s_%s_%s" % (args.policy_name, args.env_name, str(args.seed))
+	file_name = "%s_%s_%s_%s" % (args.user, args.policy_name, args.env_name, str(args.seed))
 	print "---------------------------------------"
 	print "Settings: %s" % (file_name)
 	print "---------------------------------------"
