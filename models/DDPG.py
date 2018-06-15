@@ -18,10 +18,10 @@ import multiprocessing
 def var(tensor, volatile=False):
 	return Variable(tensor, volatile=volatile)
 	# use cuda if is_available
-	# if torch.cuda.is_available():
-	# 	return Variable(tensor, volatile=volatile).cuda()
-	# else:
-	# 	return Variable(tensor, volatile=volatile)
+	if torch.cuda.is_available():
+		return Variable(tensor, volatile=volatile).cuda()
+	else:
+		return Variable(tensor, volatile=volatile)
 
 
 class Actor(nn.Module):
@@ -66,11 +66,11 @@ class DDPG(object):
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-6 , weight_decay=1e-3)
 
 		# use cuda if available
-		# if torch.cuda.is_available():
-		# 	self.actor = self.actor.cuda()
-		# 	self.actor_target = self.actor_target.cuda()
-		# 	self.critic = self.critic.cuda()
-		# 	self.critic_target = self.critic_target.cuda()
+		if torch.cuda.is_available():
+			self.actor = self.actor.cuda()
+			self.actor_target = self.actor_target.cuda()
+			self.critic = self.critic.cuda()
+			self.critic_target = self.critic_target.cuda()
 
 		self.criterion = nn.MSELoss()
 		self.state_dim = state_dim
@@ -94,6 +94,13 @@ class DDPG(object):
 			next_state = var(torch.FloatTensor(y), volatile=True)
 			done = var(torch.FloatTensor(1 - d))
 			reward = var(torch.FloatTensor(r))
+
+			if torch.cuda.is_available():
+				state = state.cuda()
+				action = action.cuda()
+				next_state = next_state.cuda()
+				done = done.cuda()
+				reward = reward.cuda()
 
 			# Q target = reward + discount * Q(next_state, pi(next_state))
 			target_Q = self.critic_target(next_state, self.actor_target(next_state))
