@@ -60,12 +60,12 @@ class DDPG(object):
 		self.actor = Actor(state_dim, action_dim, max_action)
 		self.actor_target = Actor(state_dim, action_dim, max_action)
 		self.actor_target.load_state_dict(self.actor.state_dict())
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-6)
 
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
 		self.critic_target.load_state_dict(self.critic.state_dict())
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-3, weight_decay=1e-2)
+		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-6 , weight_decay=1e-3)
 
 		# use cuda if available
 		# if torch.cuda.is_available():

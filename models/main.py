@@ -45,8 +45,8 @@ if __name__ == "__main__":
 	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=float)		# Max time steps to run environment for
 	parser.add_argument("--save_models", action="store_true")			# Whether or not models are saved
-	parser.add_argument("--expl_noise", default=0.5, type=float)		# Std of Gaussian exploration noise
-	parser.add_argument("--batch_size", default=100, type=int)			# Batch size for both actor and critic
+	parser.add_argument("--expl_noise", default=0.4, type=float)		# Std of Gaussian exploration noise
+	parser.add_argument("--batch_size", default=128, type=int)			# Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99, type=float)			# Discount factor
 	parser.add_argument("--tau", default=0.001, type=float)				# Target network update rate
 	# following arguments are for TD2 learning, not needed for DDPG
