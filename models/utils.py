@@ -7,14 +7,15 @@ import numpy as np
 class ReplayBuffer(object):
 	def __init__(self):
 		self.storage = []
+		self.max_size = 1000000
 
 	# Expects tuples of (state, next_state, action, reward, done)
 	def add(self, data):
 		self.storage.append(data)
 
 	def sample(self, batch_size=100):
-		if len(self.storage) > 100000:
-			self.storage = self.storage[-100000:]
+		if len(self.storage) > self.max_size:
+			self.storage = self.storage[-self.max_size:]
 		ind = np.random.randint(0, len(self.storage), size=batch_size)
 		x, y, u, r, d = [], [], [], [], []
 

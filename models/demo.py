@@ -53,7 +53,7 @@ if __name__ == '__main__':
     # get data and vector with years
     res = find_optimal_policy(stepsize)
     timevec = list(range(2005, 2005+len(res.x)*stepsize, stepsize))
-    f = open('results.pckl', 'wb')
+    f = open('results_200.pckl', 'wb')
     pickle.dump(res, f)
     f.close()
     # plot result

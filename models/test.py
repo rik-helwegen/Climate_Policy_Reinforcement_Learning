@@ -22,7 +22,7 @@ import sys
 from demo import *
 
 # make sure this is the same as t_max in dice2007cjl
-MAXSTEPS = 20
+MAXSTEPS = 600
 
 
 def var(tensor, volatile=False):
@@ -62,7 +62,7 @@ def test_policy_DP(DP_actions):
 		# 10 is the stepsize
 		for t in range(10):
 			if t > 0:
-				if step == 59:
+				if step == len(DP_actions)-1:
 					action = DP_actions[step] + t * ((DP_actions[step] - DP_actions[step - 1])/10)
 				else:
 					action = DP_actions[step] + t * ((DP_actions[step + 1] - DP_actions[step])/10)
@@ -81,13 +81,13 @@ def test_policy_DP(DP_actions):
 			actions.append(action)
 			rewards.append(reward)
 			counter += 1
-	print("K mean/std: ", np.mean(K_list), np.std(K_list))
-	print("M_AT mean/std: ", np.mean(M_AT_list), np.std(M_AT_list))
-	print("M_UP mean/std: ",np.mean(M_UP_list), np.std(M_UP_list))
-	print("M_LO mean/std: ",np.mean(M_LO_list), np.std(M_LO_list))
-	print("T_AT mean/std: ",np.mean(T_AT_list), np.std(T_AT_list))
-	print("T_LO mean/std: ",np.mean(T_LO_list), np.std(T_LO_list))
-	print("time mean/std: ",np.mean(time_list), np.std(time_list))
+	# print("K mean/std: ", np.mean(K_list), np.std(K_list))
+	# print("M_AT mean/std: ", np.mean(M_AT_list), np.std(M_AT_list))
+	# print("M_UP mean/std: ",np.mean(M_UP_list), np.std(M_UP_list))
+	# print("M_LO mean/std: ",np.mean(M_LO_list), np.std(M_LO_list))
+	# print("T_AT mean/std: ",np.mean(T_AT_list), np.std(T_AT_list))
+	# print("T_LO mean/std: ",np.mean(T_LO_list), np.std(T_LO_list))
+	# print("time mean/std: ",np.mean(time_list), np.std(time_list))
 	return rewards, actions
 
 def random_policy():
@@ -144,7 +144,7 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 if __name__ == '__main__':
 	evaluate_episode_number = sys.argv[1]
 	# show results of dp, works only for t_max=600
-	dp = False
+	dp = True
 	model = Actor(7, 1, 1)
 	# Adjust model to load:
 	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_' + str(evaluate_episode_number) + '.pt'))
@@ -155,12 +155,11 @@ if __name__ == '__main__':
 	policy_rewards, policy_actions = test_policy(model)
 	DP_rewards = []
 	DP_actions = []
-	print(policy_rewards)
 	if dp == True:
 		f = open('results.pckl', 'rb')
 		DP_actions = pickle.load(f)
 		f.close()
 		DP_rewards, DP_actions = test_policy_DP(DP_actions.x)
-		print("The mean and variance for normalizing the rewards")
-		print(np.mean(DP_rewards), np.std(DP_rewards))
+		# print("The mean and variance for normalizing the rewards")
+		# print(np.mean(DP_rewards), np.std(DP_rewards))
 	make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp)
