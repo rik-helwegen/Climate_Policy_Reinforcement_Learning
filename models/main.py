@@ -55,9 +55,9 @@ if __name__ == "__main__":
 	parser.add_argument("--user", default='', type=str)
 	args = parser.parse_args()
 
-	file_name = "%s_%s_%s_%s" % (args.user, args.policy_name, args.env_name, str(args.seed))
+	filename = "%s_%s_%s_%s" % (args.user, args.policy_name, args.env_name, str(args.seed))
 	print "---------------------------------------"
-	print "Settings: %s" % (file_name)
+	print "Settings: %s" % (filename)
 	print "---------------------------------------"
 
 	if not os.path.exists("./results"):
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 	replay_buffer = utils.ReplayBuffer()
 
 	# Evaluate untrained policy
-	evaluations = [evaluate_policy(policy)]
+	evaluations = []
 
 	total_timesteps = 0
 	timesteps_since_eval = 0
@@ -114,27 +114,28 @@ if __name__ == "__main__":
 			# Evaluate episode
 			if timesteps_since_eval >= args.eval_freq:
 				timesteps_since_eval %= args.eval_freq
-			evaluations.append(evaluate_policy(policy))
+			evaluations.append(float(evaluate_policy(policy)))
 			if True and episode_num % 10 == 0:
-				policy.save(file_name, directory="./pytorch_models")
-				np.save("./results/%s" % (file_name), evaluations)
+				policy.save(filename, directory="./pytorch_models")
+				# np.save("./results/%s" % (file_name), evaluations)
 
 
 
-			if episode_num > 0 and episode_num%1==0 and args.das == 0:
-				plt.figure()
-				x = list(range(0, episode_num))
-				plt.plot(x, evaluations)
-				plt.title("Average reward")
-				filename = "results/figures/reward/average_reward"
-				plt.savefig(filename)
-				plt.close()
+
 			# Reset environment
 			obs = env.reset()
 			done = False
 			episode_reward = 0
 			episode_timesteps = 0
 			episode_num += 1
+			if episode_num > 0:
+				plt.figure()
+				x = list(range(0, episode_num))
+				plt.plot(x, evaluations)
+				plt.title("Average reward")
+				filename_reward = "results/figures/reward/" + filename + "_average_reward" 
+				plt.savefig(filename_reward)
+				plt.close()
 
 
 		# Select action randomly or according to policy
@@ -177,11 +178,11 @@ if __name__ == "__main__":
 			plt.subplot(1,2,2)
 			plt.plot(x, critic_loss_dev)
 			plt.title("avg. Cricic loss dev over episodes")
-			filename = "results/figures/loss_development"
-			plt.savefig(filename)
+			filename_loss = "results/figures/loss/" + filename + "_loss"
+			plt.savefig(filename_loss)
 			plt.close()
 
 	# Final evaluation
 	evaluations.append(evaluate_policy(policy))
-	if args.save_models: policy.save("%s" % (file_name), directory="./pytorch_models")
-np.save("./results/%s" % (file_name), evaluations)
+	if args.save_models: policy.save("%s" % (filename), directory="./pytorch_models")
+np.save("./results/%s" % (filename), evaluations)
