@@ -1,6 +1,6 @@
 import numpy as np
 
-# Code based on: 
+# Code based on:
 # https://github.com/openai/baselines/blob/master/baselines/deepq/replay_buffer.py
 
 # Simple replay buffer
@@ -19,7 +19,7 @@ class ReplayBuffer(object):
 		ind = np.random.randint(0, len(self.storage), size=batch_size)
 		x, y, u, r, d = [], [], [], [], []
 
-		for i in ind: 
+		for i in ind:
 			X, Y, U, R, D = self.storage[i]
 			x.append(np.array(X, copy=False))
 			y.append(np.array(Y, copy=False))
@@ -33,7 +33,7 @@ class ReplayBuffer(object):
 # Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 class OrnsteinUhlenbeckActionNoise:
 
-	def __init__(self, action_dim, mu = 0, theta = 0.15, sigma = 0.2):
+	def __init__(self, action_dim, mu = 0, theta = 0.15, sigma = 0.1):
 		self.action_dim = action_dim
 		self.mu = mu
 		self.theta = theta
