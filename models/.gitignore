@@ -1,1 +1,3 @@
 *.pyc
+models/results/*
+models/pytorch_models/*

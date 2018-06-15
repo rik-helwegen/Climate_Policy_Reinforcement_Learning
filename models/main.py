@@ -141,7 +141,7 @@ if __name__ == "__main__":
 		if total_timesteps < args.start_timesteps:
 			action = np.random.uniform()
 		else:
-			action = policy.select_action(np.array(obs))		
+			action = policy.select_action(np.array(obs))
 			if args.expl_noise != 0:
 				action = (action + ouNoise.sample()).clip(0, 1)
 				action = action[0]
@@ -184,4 +184,4 @@ if __name__ == "__main__":
 	# Final evaluation
 	evaluations.append(evaluate_policy(policy))
 	if args.save_models: policy.save("%s" % (file_name), directory="./pytorch_models")
-	np.save("./results/%s" % (file_name), evaluations)
+np.save("./results/%s" % (file_name), evaluations)
