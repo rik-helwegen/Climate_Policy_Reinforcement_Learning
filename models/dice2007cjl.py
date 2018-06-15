@@ -154,11 +154,9 @@ class Dice2007cjl(object):
 
         done = (self.time == self.t_max)
 
-        # manual reward function to test if model trains
-        if self.time <= 10 and mu < 0.5:
-            reward = 0.8
-        elif self.time > 10 and mu >= 0.5:
-            reward = 0.8
+        # learn to predict the time from state
+        if self.time-3 < mu*self.t_max < self.time+3:
+            reward = 1
         else:
             reward = 0
         return [self.observable_state(), reward, done]
