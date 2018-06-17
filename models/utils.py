@@ -7,7 +7,7 @@ import numpy as np
 class ReplayBuffer(object):
 	def __init__(self):
 		self.storage = []
-		self.max_size = 1000000
+		self.max_size = 10000
 
 	# Expects tuples of (state, next_state, action, reward, done)
 	def add(self, data):
@@ -26,7 +26,6 @@ class ReplayBuffer(object):
 			u.append(np.array(U, copy=False))
 			r.append(np.array(R, copy=False))
 			d.append(np.array(D, copy=False))
-
 		return np.array(x), np.array(y), np.array(u).reshape(batch_size, 1), np.array(r).reshape(-1, 1), np.array(d).reshape(-1, 1)
 
 
