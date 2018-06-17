@@ -1,6 +1,8 @@
+import matplotlib
+matplotlib.use('agg')
 import pickle
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize
+# from scipy.optimize import minimize
 import numpy as np
 # project imports
 from dice2007cjl import Dice2007cjl as Dice
@@ -19,17 +21,19 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import sys
-from demo import *
+# from demo import *
 
 # make sure this is the same as t_max in dice2007cjl
 MAXSTEPS = 600
 
 
 def var(tensor, volatile=False):
-	if torch.cuda.is_available():
-		return Variable(tensor, volatile=volatile).cuda()
-	else:
-		return Variable(tensor, volatile=volatile)
+	return Variable(tensor, volatile=volatile)
+
+	# if torch.cuda.is_available():
+	# 	return Variable(tensor, volatile=volatile).cuda()
+	# else:
+	# 	return Variable(tensor, volatile=volatile)
 
 def test_policy(model):
 	env = Dice()
@@ -37,9 +41,12 @@ def test_policy(model):
 	rewards = []
 	actions = []
 	for t in range(MAXSTEPS):
-		action = model(var(torch.FloatTensor(np.array(state))))
-		action = np.clip(float(action), 0, 1)
-		new_state, reward, done  = env.step(action)
+		state = var(torch.FloatTensor(np.array(state).reshape(-1, 7)), volatile=True)
+		action = model(state).cpu().data.numpy().flatten()
+		if action < 0 or action > 1:
+			print("Action is out of bounds")
+		# action = np.clip(float(action), 0, 1)
+		new_state, reward, done  = env.step(action[0])
 		state = new_state
 		actions.append(action)
 		rewards.append(reward)
@@ -138,7 +145,9 @@ def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, D
 		plt.plot(timevec, DP_actions)
 		plt.title('Mu (action) for DP policy')
 
-	plt.show()
+	filename_reward = "results/figures/test_figure" 
+	plt.savefig(filename_reward)
+	plt.close()
 
 
 if __name__ == '__main__':
@@ -147,7 +156,7 @@ if __name__ == '__main__':
 	dp = True
 	model = Actor(7, 1, 1)
 	# Adjust model to load:
-	model.load_state_dict(torch.load('pytorch_models/DDPG_DICE_0_actor_' + str(evaluate_episode_number) + '.pt'))
+	model.load_state_dict(torch.load('pytorch_models/Laurens_DDPG_DICE_0_actor_' + str(evaluate_episode_number) + '.pt'))
 
 	# random model, does not need actor model since policy is random
 	random_rewards, random_actions = random_policy()
