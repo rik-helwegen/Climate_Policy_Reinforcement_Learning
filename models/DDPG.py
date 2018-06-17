@@ -16,7 +16,6 @@ import multiprocessing
 
 
 def var(tensor, volatile=False):
-	return Variable(tensor, volatile=volatile)
 	# use cuda if is_available
 	if torch.cuda.is_available():
 		return Variable(tensor, volatile=volatile).cuda()
@@ -27,14 +26,16 @@ def var(tensor, volatile=False):
 class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
 		super(Actor, self).__init__()
-		self.l1 = nn.Linear(state_dim, 400)
-		self.l2 = nn.Linear(400, 300)
-		self.l3 = nn.Linear(300, action_dim)
+		self.l1 = nn.Linear(state_dim, 200)
+		self.l2 = nn.Linear(200, 150)
+		self.l3 = nn.Linear(150, 100)
+		self.l4 = nn.Linear(100, action_dim)
 
 	def forward(self, x):
 		x = F.relu(self.l1(x))
 		x = F.relu(self.l2(x))
-		x =  F.tanh(self.l3(x))
+		x = F.relu(self.l3(x))
+		x =  F.tanh(self.l4(x))
 		return (x + 1)/2
 
 
@@ -42,14 +43,16 @@ class Critic(nn.Module):
 	def __init__(self, state_dim, action_dim):
 		super(Critic, self).__init__()
 
-		self.l1 = nn.Linear(state_dim, 400)
-		self.l2 = nn.Linear(400 + action_dim, 300)
-		self.l3 = nn.Linear(300, 1)
+		self.l1 = nn.Linear(state_dim, 250)
+		self.l2 = nn.Linear(250 + action_dim, 200)
+		self.l3 = nn.Linear(200, 250)
+		self.l4= nn.Linear(250, 1)
 
 	def forward(self, x, u):
 		x = F.relu(self.l1(x))
 		x = F.relu(self.l2(torch.cat([x, u], 1)))
 		x = self.l3(x)
+		x = self.l4(x)
 		return x
 
 
@@ -58,12 +61,12 @@ class DDPG(object):
 		self.actor = Actor(state_dim, action_dim, max_action)
 		self.actor_target = Actor(state_dim, action_dim, max_action)
 		self.actor_target.load_state_dict(self.actor.state_dict())
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-6)
+		self.actor_optimizer = torch.optim.RMSprop(self.actor.parameters(), lr=0.5e-8)
 
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
 		self.critic_target.load_state_dict(self.critic.state_dict())
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-6 , weight_decay=1e-3)
+		self.critic_optimizer = torch.optim.RMSprop(self.critic.parameters(), lr=0.5e-8 , weight_decay=0)
 
 		# use cuda if available
 		if torch.cuda.is_available():

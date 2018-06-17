@@ -154,11 +154,6 @@ class Dice2007cjl(object):
 
         done = (self.time == self.t_max)
 
-        # # learn to predict the time from state
-        # if self.time-3 < mu*self.t_max < self.time+3:
-        #     reward = 1
-        # else:
-        #     reward = 0
         return [self.observable_state(), reward, done]
 
     def observable_state(self):
@@ -172,5 +167,5 @@ class Dice2007cjl(object):
         ('time mean/std: ', 300.5, 173.2048401941085)
         """
         mean = np.mean(list(range(1, self.t_max)))
-        std = np.var(list(range(1, self.t_max)))
+        std = np.std(list(range(1, self.t_max)))
         return ((self.K - 10569.5)/13517.9, (self.M_AT - 1102.2)/194.7, (self.M_UP-1788.5)/231.4, (self.M_LO-19257)/593.5, (self.T_AT-2.55)/0.677, (self.T_LO-1.78)/0.844, (self.time-mean)/std)

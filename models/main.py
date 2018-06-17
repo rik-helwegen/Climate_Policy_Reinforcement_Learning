@@ -16,14 +16,14 @@ import sys
 
 
 # Runs policy for X episodes and returns average reward
-def evaluate_policy(policy, eval_episodes=10):
+def evaluate_policy(policy, eval_episodes=1):
 	avg_reward = 0.
 	for _ in xrange(eval_episodes):
 		obs = env.reset()
 		done = False
 		while not done:
 			action = policy.select_action(np.array(obs))
-			obs, reward, done = env.step(action)
+			obs, reward, done = env.step(action[0])
 			avg_reward += reward
 
 	avg_reward /= eval_episodes
@@ -44,10 +44,10 @@ if __name__ == "__main__":
 	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=float)		# Max time steps to run environment for
 	parser.add_argument("--save_models", action="store_true")			# Whether or not models are saved
-	parser.add_argument("--expl_noise", default=0.4, type=float)		# Std of Gaussian exploration noise
+	parser.add_argument("--expl_noise", default=0.6, type=float)		# Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=128, type=int)			# Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99, type=float)			# Discount factor
-	parser.add_argument("--tau", default=0.001, type=float)				# Target network update rate
+	parser.add_argument("--tau", default=0.01, type=float)				# Target network update rate
 	# following arguments are for TD2 learning, not needed for DDPG
 	parser.add_argument("--policy_noise", default=0.2, type=float)		# Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5, type=float)		# Range to clip target policy noise
@@ -103,6 +103,7 @@ if __name__ == "__main__":
 		# Done = true for first and last timestep
 		if done:
 
+			evaluations.append(float(evaluate_policy(policy)))
 			if total_timesteps != 0:
 				print("Total T: %d Episode Num: %d Episode T: %d Reward: %f") % (total_timesteps, episode_num, episode_timesteps, episode_reward)
 				if args.policy_name == "TD3":
@@ -114,13 +115,9 @@ if __name__ == "__main__":
 			# Evaluate episode
 			if timesteps_since_eval >= args.eval_freq:
 				timesteps_since_eval %= args.eval_freq
-			evaluations.append(float(evaluate_policy(policy)))
 			if True and episode_num % 10 == 0:
 				policy.save(filename, directory="./pytorch_models")
 				# np.save("./results/%s" % (file_name), evaluations)
-
-
-
 
 			# Reset environment
 			obs = env.reset()
@@ -128,12 +125,12 @@ if __name__ == "__main__":
 			episode_reward = 0
 			episode_timesteps = 0
 			episode_num += 1
-			if episode_num > 0:
+			if episode_num%3 == 0:
 				plt.figure()
 				x = list(range(0, episode_num))
 				plt.plot(x, evaluations)
 				plt.title("Average reward")
-				filename_reward = "results/figures/reward/" + filename + "_average_reward" 
+				filename_reward = "results/figures/" + filename + "_average_reward" 
 				plt.savefig(filename_reward)
 				plt.close()
 
@@ -146,10 +143,6 @@ if __name__ == "__main__":
 			if args.expl_noise != 0:
 				action = (action + ouNoise.sample()).clip(0, 1)
 				action = action[0]
-
-				# previous noise
-				# action = (action + np.random.normal(0, args.expl_noise, size=1)).clip(0, 1)
-				# action = action[0]
 
 		# Perform action
 		new_obs, reward, done = env.step(action)
@@ -178,7 +171,7 @@ if __name__ == "__main__":
 			plt.subplot(1,2,2)
 			plt.plot(x, critic_loss_dev)
 			plt.title("avg. Cricic loss dev over episodes")
-			filename_loss = "results/figures/loss/" + filename + "_loss"
+			filename_loss = "results/figures/" + filename + "_loss"
 			plt.savefig(filename_loss)
 			plt.close()
 
