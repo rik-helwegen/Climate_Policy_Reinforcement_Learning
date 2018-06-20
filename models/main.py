@@ -18,6 +18,7 @@ import sys
 # Runs policy for X episodes and returns average reward
 def evaluate_policy(policy, eval_episodes=1):
 	avg_reward = 0.
+	policy.actor.eval()
 	for _ in xrange(eval_episodes):
 		obs = env.reset()
 		done = False
@@ -30,6 +31,8 @@ def evaluate_policy(policy, eval_episodes=1):
 
 	print "---------------------------------------"
 	print "Evaluation over %d episodes: %f" % (eval_episodes, avg_reward)
+	policy.actor.train()
+
 	print "---------------------------------------"
 	return avg_reward
 
@@ -40,14 +43,14 @@ if __name__ == "__main__":
 	parser.add_argument("--env_name", default="DICE")					# Dynamic integrated climate economic model
 	parser.add_argument("--das", default=0)								# Wheter using Das4 or not(0=not 1==Using das4)
 	parser.add_argument("--seed", default=0, type=int)					# Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=1000, type=int)	# How many time steps purely random policy is run for
+	parser.add_argument("--start_timesteps", default=1200, type=int)	# How many time steps purely random policy is run for
 	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=float)		# Max time steps to run environment for
 	parser.add_argument("--save_models", action="store_true")			# Whether or not models are saved
-	parser.add_argument("--expl_noise", default=0.6, type=float)		# Std of Gaussian exploration noise
-	parser.add_argument("--batch_size", default=128, type=int)			# Batch size for both actor and critic
-	parser.add_argument("--discount", default=0.99, type=float)			# Discount factor
-	parser.add_argument("--tau", default=0.01, type=float)				# Target network update rate
+	parser.add_argument("--expl_noise", default=0.3, type=float)		# Std of Gaussian exploration noise
+	parser.add_argument("--batch_size", default=100, type=int)			# Batch size for both actor and critic
+	parser.add_argument("--discount", default=1.0, type=float)			# Discount factor
+	parser.add_argument("--tau", default=0.005, type=float)				# Target network update rate
 	# following arguments are for TD2 learning, not needed for DDPG
 	parser.add_argument("--policy_noise", default=0.2, type=float)		# Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5, type=float)		# Range to clip target policy noise
@@ -83,7 +86,7 @@ if __name__ == "__main__":
 
 	replay_buffer = utils.ReplayBuffer()
 
-	# Evaluate untrained policy
+	# Evaluate policy so far
 	evaluations = []
 
 	total_timesteps = 0
@@ -102,8 +105,8 @@ if __name__ == "__main__":
 
 		# Done = true for first and last timestep
 		if done:
-
-			evaluations.append(float(evaluate_policy(policy)))
+			if total_timesteps > 0:
+				evaluations.append(float(evaluate_policy(policy)))
 			if total_timesteps != 0:
 				print("Total T: %d Episode Num: %d Episode T: %d Reward: %f") % (total_timesteps, episode_num, episode_timesteps, episode_reward)
 				if args.policy_name == "TD3":
@@ -127,10 +130,11 @@ if __name__ == "__main__":
 			episode_num += 1
 			if episode_num%3 == 0:
 				plt.figure()
-				x = list(range(0, episode_num))
+				x = list(range(1, episode_num))
 				plt.plot(x, evaluations)
 				plt.title("Average reward")
-				filename_reward = "results/figures/" + filename + "_average_reward" 
+				filename_reward = "results/figures/" + filename + "_average_reward"
+				plt.ylim(-1, 0)
 				plt.savefig(filename_reward)
 				plt.close()
 
@@ -139,20 +143,18 @@ if __name__ == "__main__":
 		if total_timesteps < args.start_timesteps:
 			action = np.random.uniform()
 		else:
+			policy.actor.eval()
 			action = policy.select_action(np.array(obs))
+			policy.actor.train()
 			if args.expl_noise != 0:
 				action = (action + ouNoise.sample()).clip(0, 1)
 				action = action[0]
 
 		# Perform action
 		new_obs, reward, done = env.step(action)
-		done_bool = 0 if episode_timesteps + 1 == env.t_max else float(done)
-		episode_reward += reward
-		all_rewards.append(reward)
-		average_reward.append(np.mean(all_rewards))
 
 		# Store data in replay buffer
-		replay_buffer.add((obs, new_obs, action, reward, done_bool))
+		replay_buffer.add((obs, new_obs, action, reward, done))
 		obs = new_obs
 
 		episode_timesteps += 1
