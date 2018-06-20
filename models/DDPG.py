@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 import utils
+import sys
 import multiprocessing
 
 # torch.set_num_threads(multiprocessing.cpu_count())
@@ -26,32 +27,42 @@ def var(tensor, volatile=False):
 class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
 		super(Actor, self).__init__()
+		self.b1 = nn.BatchNorm1d(state_dim)
 		self.l1 = nn.Linear(state_dim, 200)
-		self.l2 = nn.Linear(200, 150)
-		self.l3 = nn.Linear(150, 100)
+		self.b2 = nn.BatchNorm1d(200)
+		self.l2 = nn.Linear(200, 100)
+		self.b3 = nn.BatchNorm1d(100)
+		# self.l3 = nn.Linear(150, 100)
 		self.l4 = nn.Linear(100, action_dim)
 
 	def forward(self, x):
+		x = self.b1(x)
 		x = F.relu(self.l1(x))
+		x = self.b2(x)
 		x = F.relu(self.l2(x))
-		x = F.relu(self.l3(x))
+		x = self.b3(x)
+		# x = F.relu(self.l3(x))
 		x =  F.tanh(self.l4(x))
-		return (x + 1)/2
+		return (x + 1)/2.0
 
 
 class Critic(nn.Module):
 	def __init__(self, state_dim, action_dim):
 		super(Critic, self).__init__()
 
+		self.b1 = nn.BatchNorm1d(state_dim)
 		self.l1 = nn.Linear(state_dim, 250)
+		# self.b2 = nn.BatchNorm1d(250)
 		self.l2 = nn.Linear(250 + action_dim, 200)
-		self.l3 = nn.Linear(200, 250)
-		self.l4= nn.Linear(250, 1)
+		# self.l3 = nn.Linear(200, 250)
+		# self.b3 = nn.BatchNorm1d(200)
+		self.l4= nn.Linear(200, 1)
 
 	def forward(self, x, u):
+		x = self.b1(x)
 		x = F.relu(self.l1(x))
 		x = F.relu(self.l2(torch.cat([x, u], 1)))
-		x = self.l3(x)
+		# x = self.l3(x)
 		x = self.l4(x)
 		return x
 
@@ -61,12 +72,11 @@ class DDPG(object):
 		self.actor = Actor(state_dim, action_dim, max_action)
 		self.actor_target = Actor(state_dim, action_dim, max_action)
 		self.actor_target.load_state_dict(self.actor.state_dict())
-		self.actor_optimizer = torch.optim.RMSprop(self.actor.parameters(), lr=0.5e-8)
+		self.actor_optimizer = torch.optim.RMSprop(self.actor.parameters(), lr=1e-7)
 
 		self.critic = Critic(state_dim, action_dim)
 		self.critic_target = Critic(state_dim, action_dim)
 		self.critic_target.load_state_dict(self.critic.state_dict())
-		self.critic_optimizer = torch.optim.RMSprop(self.critic.parameters(), lr=0.5e-8 , weight_decay=0)
 
 		# use cuda if available
 		if torch.cuda.is_available():
@@ -113,10 +123,14 @@ class DDPG(object):
 			# Get current Q estimate
 			current_Q = self.critic(state, action)
 
+
 			# Compute critic loss
 			critic_loss = self.criterion(current_Q, target_Q)
 
+			learning_rate = 1e-7/float(self.episode + 1)
 			# Optimize the critic
+			self.critic_optimizer = torch.optim.RMSprop(self.critic.parameters(), lr=learning_rate , weight_decay=1e-2)
+
 			self.critic_optimizer.zero_grad()
 			critic_loss.backward()
 			self.critic_optimizer.step()
