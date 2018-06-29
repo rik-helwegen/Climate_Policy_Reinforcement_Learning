@@ -79,7 +79,6 @@ class Dice2007cjl(object):
         self.M_LO = 18365  # Concentration in lower strata 2005 (GtC)
         self.T_AT = .7307  # 2000 atmospheric temp change (C)from 1900
         self.T_LO = .0068  # 2000 lower strat. temp change (C) from 1900
-        self.AMOC = 0 # tipping point
 
         return self.observable_state()
 
@@ -119,7 +118,6 @@ class Dice2007cjl(object):
         # For readability, define t
         t = self.time
 
-
         # MODEL EQUATION #
 
         # ECONOMY
@@ -147,16 +145,13 @@ class Dice2007cjl(object):
         # UTILITY
         c = y - i
         u = self.L[t]*((c/self.L[t])**(1-alpha) - 1)/(1-alpha)
-        reward = u
+        reward = u * self.R[t]
 
 
         self.time+=1
 
         done = (self.time == self.t_max)
-        reward = (reward - -180311.55)/276615.444
-
-
-        return [self.observable_state(), reward, done]
+        return [self.observable_state(), np.array(reward), done]
 
     def observable_state(self):
         return (self.K, self.M_AT, self.M_UP, self.M_LO, self.T_AT, self.T_LO, self.time)

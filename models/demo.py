@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 import numpy as np
 # project imports
 from dice2007cjl import Dice2007cjl as Dice
-import pickle
+
 def find_optimal_policy(stepsize=10):
     """Find optimal policy for our model.
 
@@ -24,12 +24,10 @@ def find_optimal_policy(stepsize=10):
         env.reset()
         utility = 0
         # execute run
-        list_of_rewards = []
         for step in range(n_steps):
             for _ in range(stepsize):
                 _, r, _ = env.step(muvec[step])
                 utility += r
-                list_of_rewards.append(r)
         # return minus utility (since scipy offers minimize)
         return -(utility/194)+381800  # scale to ease optimization
 
@@ -52,10 +50,8 @@ if __name__ == '__main__':
     stepsize = 10
     # get data and vector with years
     res = find_optimal_policy(stepsize)
+    print(res.x[0])
     timevec = list(range(2005, 2005+len(res.x)*stepsize, stepsize))
-    f = open('results_200.pckl', 'wb')
-    pickle.dump(res, f)
-    f.close()
     # plot result
     plt.plot(timevec, res.x)
     plt.xlabel('Year')

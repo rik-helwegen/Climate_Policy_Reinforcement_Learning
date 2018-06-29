@@ -1,183 +1,186 @@
-import matplotlib
-matplotlib.use('agg')
+from __future__ import division
 import numpy as np
 import torch
-# import gym
-import argparse
+from torch.autograd import Variable
 import os
-
-import utils
-import TD3
-import OurDDPG
-import DDPG
-from dice2007cjl import Dice2007cjl as Dice
-import matplotlib.pyplot as plt
+# import psutil
+import gc
 import sys
+import train
+import buffer
+from dice2007cjl import Dice2007cjl as Dice
+from dice_eval import Dice2007cjl as Dice_eval
+
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import argparse
+from start_storage import *
+
+# user
+user = sys.argv[1]
+
+# Number of episodes
+MAX_EPISODES = 100
+
+# Max number of steps until terminate
+MAX_STEPS = 1000
+
+# HYPER PARAMETERS
+# The batch size for training
+BATCH_SIZE = 128
+
+# Learning rate
+LR_actor = 0.0001
+LR_critic = 0.01
+
+# LR_actor_list = [0.000001,0.000001,0.000001,0.000001,0.00001,0.00001,0.00001,0.0001,0.0001,0.0001,]
+# LR_critic_list = [0.0001,0.0006,0.001,0.00001,0.0001,0.0006,0.001,0.0001,0.0006,0.001]
+
+# Discount factor
+GAMMA = 1.0/1.015
+
+# Update Target network
+TAU = 0.0005
+
+# Size of the Replay Memory
+MAX_BUFFER = 20000
+
+# exploration rate
+expl_rate = 0.2
+
+# Dimensions
+S_DIM = 7
+A_DIM = 1
 
 
-# Runs policy for X episodes and returns average reward
-def evaluate_policy(policy, eval_episodes=1):
-	avg_reward = 0.
-	policy.actor.eval()
-	for _ in xrange(eval_episodes):
-		obs = env.reset()
-		done = False
-		while not done:
-			action = policy.select_action(np.array(obs))
-			obs, reward, done = env.step(action[0])
-			avg_reward += reward
+# np.random.seed(1234)
+# torch.manual_seed(1234)
 
-	avg_reward /= eval_episodes
 
-	print "---------------------------------------"
-	print "Evaluation over %d episodes: %f" % (eval_episodes, avg_reward)
-	policy.actor.train()
+def evaluate():
 
-	print "---------------------------------------"
-	return avg_reward
+	state = env_eval.reset()
+	rewards = 0.
+	done = False
+	actions = []
+	while not done:
+		action = trainer.get_exploitation_action(np.float32(state))
+		state, reward, done = env_eval.step(action[0])
+		rewards += reward
+		actions.append(action[0])
+	print("The sum of rewards is: ", rewards)
+	return rewards, actions
 
-if __name__ == "__main__":
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--policy_name", default="DDPG")					# Policy name
-	parser.add_argument("--env_name", default="DICE")					# Dynamic integrated climate economic model
-	parser.add_argument("--das", default=0)								# Wheter using Das4 or not(0=not 1==Using das4)
-	parser.add_argument("--seed", default=0, type=int)					# Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=1200, type=int)	# How many time steps purely random policy is run for
-	parser.add_argument("--eval_freq", default=1e3, type=float)			# How often (time steps) we evaluate
-	parser.add_argument("--max_timesteps", default=1e6, type=float)		# Max time steps to run environment for
-	parser.add_argument("--save_models", action="store_true")			# Whether or not models are saved
-	parser.add_argument("--expl_noise", default=0.3, type=float)		# Std of Gaussian exploration noise
-	parser.add_argument("--batch_size", default=100, type=int)			# Batch size for both actor and critic
-	parser.add_argument("--discount", default=1.0, type=float)			# Discount factor
-	parser.add_argument("--tau", default=0.005, type=float)				# Target network update rate
-	# following arguments are for TD2 learning, not needed for DDPG
-	parser.add_argument("--policy_noise", default=0.2, type=float)		# Noise added to target policy during critic update
-	parser.add_argument("--noise_clip", default=0.5, type=float)		# Range to clip target policy noise
-	parser.add_argument("--policy_freq", default=2, type=int)			# Frequency of delayed policy updates
-	parser.add_argument("--user", default='', type=str)
-	args = parser.parse_args()
+# reliability, test n times
+n = 10
 
-	filename = "%s_%s_%s_%s" % (args.user, args.policy_name, args.env_name, str(args.seed))
-	print "---------------------------------------"
-	print "Settings: %s" % (filename)
-	print "---------------------------------------"
 
-	if not os.path.exists("./results"):
-		os.makedirs("./results")
-	if True and not os.path.exists("./pytorch_models"):
-		os.makedirs("./pytorch_models")
+for n_version in range(n):
 
-	# env = gym.make(args.env_name)
+	# LR_actor = LR_actor_list[n_version]
+	# LR_critic = LR_critic_list[n_version]
+
+	version = 'RUN-%i_user-%s_MEps-%s_Bsize-%s_LRac-%s_LRcr-%s_Tau-%s_maxBuf-%s_explRt-%s' %(n_version, str(user),str(MAX_EPISODES), str(BATCH_SIZE),str(LR_actor), str(LR_critic), str(TAU), str(MAX_BUFFER), str(expl_rate))
+
+
+	# Statistics
+	reward_plot = []
+
+	# Initializations
+	ram = buffer.MemoryBuffer(MAX_BUFFER)
+
+	# Initialize buffer:
+	init_buffer = create_init_for_R(MAX_BUFFER)
+	# print(np.float32(list(init_buffer[0][0])))
+	print 'Initialize ram...'
+	for obsv in init_buffer:
+		ram.add(np.float32(list(obsv[0])),list([obsv[2]]),obsv[3],np.float32(list(obsv[1])))
+	print 'Ram initialized'
+
+	trainer = train.Trainer(S_DIM, A_DIM, ram, LR_actor, LR_critic, GAMMA, TAU, BATCH_SIZE, expl_rate, version)
+
+
+
+
 	env = Dice()
+	env_eval = Dice_eval()
 
-	# Set seeds
-	torch.manual_seed(args.seed)
-	np.random.seed(args.seed)
+	highest_reward = -np.inf
+	best_policy = []
 
-	state_dim = 7 # The six parameters  + The current time
-	action_dim = 1 # Predicting mu
-	max_action = 1 # Action space lies between 0 and 1
-
-	# Initialize policy
-	if args.policy_name == "TD3": policy = TD3.TD3(state_dim, action_dim, max_action)
-	elif args.policy_name == "OurDDPG": policy = OurDDPG.DDPG(state_dim, action_dim, max_action)
-	elif args.policy_name == "DDPG": policy = DDPG.DDPG(state_dim, action_dim, max_action)
-
-	replay_buffer = utils.ReplayBuffer()
-
-	# Evaluate policy so far
-	evaluations = []
-
-	total_timesteps = 0
-	timesteps_since_eval = 0
-	episode_num = 0
-	average_reward = []
-	all_rewards = []
 	actor_loss_dev = []
 	critic_loss_dev = []
-	# first timestep done=True such that initialization runs
-	done = True
 
-	ouNoise = utils.OrnsteinUhlenbeckActionNoise(action_dim, 0 , 0.15, args.expl_noise)
 
-	while total_timesteps < args.max_timesteps:
+	for _ep in range(MAX_EPISODES):
+		observation = env.reset()
+		print 'EPISODE :- ', _ep
+		for r in range(MAX_STEPS):
+			state = np.float32(observation)
 
-		# Done = true for first and last timestep
-		if done:
-			if total_timesteps > 0:
-				evaluations.append(float(evaluate_policy(policy)))
-			if total_timesteps != 0:
-				print("Total T: %d Episode Num: %d Episode T: %d Reward: %f") % (total_timesteps, episode_num, episode_timesteps, episode_reward)
-				if args.policy_name == "TD3":
-					policy.train(replay_buffer, episode_timesteps, args.batch_size, args.discount, args.tau, args.policy_noise, args.noise_clip, args.policy_freq)
-				else:
-					actor_loss, critic_loss = policy.train(replay_buffer, episode_timesteps, args.batch_size, args.discount, args.tau)
-				actor_loss_dev.append(actor_loss)
-				critic_loss_dev.append(critic_loss)
-			# Evaluate episode
-			if timesteps_since_eval >= args.eval_freq:
-				timesteps_since_eval %= args.eval_freq
-			if True and episode_num % 10 == 0:
-				policy.save(filename, directory="./pytorch_models")
-				# np.save("./results/%s" % (file_name), evaluations)
+			action = trainer.get_exploration_action(state,  _ep)
+			new_observation, reward, done = env.step(action[0])
 
-			# Reset environment
-			obs = env.reset()
-			done = False
-			episode_reward = 0
-			episode_timesteps = 0
-			episode_num += 1
-			if episode_num%3 == 0:
+			if done:
+				new_state = None
+			else:
+				new_state = np.float32(new_observation)
+				# push this exp in ram
+				ram.add(state, action, reward, new_state)
+
+			observation = new_observation
+
+			# perform optimization
+			if ram.len > 300:
+				loss_actor, loss_critic = trainer.optimize()
+				actor_loss_dev.append(loss_actor)
+				critic_loss_dev.append(loss_critic)
+			if done:
+				sum_rewards, policy = evaluate()
+
+				if sum_rewards > highest_reward :
+					highest_reward = sum_rewards
+					best_policy = policy
+					trainer.save_models(_ep, version)
+
+
+				reward_plot.append(sum_rewards)
+
 				plt.figure()
-				x = list(range(1, episode_num))
-				plt.plot(x, evaluations)
-				plt.title("Average reward")
-				filename_reward = "results/figures/" + filename + "_average_reward"
-				plt.ylim(-1, 0)
-				plt.savefig(filename_reward)
+				plt.subplot(3, 1, 1)
+				x = list(range(0, _ep + 1))
+				plt.plot(x, reward_plot)
+				plt.title('sum of reward over episodes')
+
+				plt.subplot(3, 1, 2)
+				x = list(range(0, len(policy)))
+				plt.plot(x, policy)
+				plt.title('Policy behaviour')
+
+				plt.subplot(3,1,3)
+				x = list(range(len(best_policy)))
+				plt.plot(x, best_policy)
+				plt.title('Best policy behaviour so far')
+
+				figname = './reward_figs/Stats' + str(version) + '.jpg'
+				plt.savefig(figname)
 				plt.close()
 
+				plt.figure()
+				plt.subplot(2,1,1)
+				plt.plot(list(range(len(actor_loss_dev))),actor_loss_dev)
+				plt.title('loss actor develop over episodes')
+				plt.subplot(2,1,2)
+				plt.plot(list(range(len(critic_loss_dev))),critic_loss_dev)
+				plt.title('loss critic develop over episodes')
+				figname = './loss_figs/losses_' + str(version) + '.jpg'
+				plt.savefig(figname)
+				plt.close()
+				break
 
-		# Select action randomly or according to policy
-		if total_timesteps < args.start_timesteps:
-			action = np.random.uniform()
-		else:
-			policy.actor.eval()
-			action = policy.select_action(np.array(obs))
-			policy.actor.train()
-			if args.expl_noise != 0:
-				action = (action + ouNoise.sample()).clip(0, 1)
-				action = action[0]
-
-		# Perform action
-		new_obs, reward, done = env.step(action)
-
-		# Store data in replay buffer
-		replay_buffer.add((obs, new_obs, action, reward, done))
-		obs = new_obs
-
-		episode_timesteps += 1
-		total_timesteps += 1
-		timesteps_since_eval += 1
-
-		# plot results of loss development
-		# save loss development as image.
-		if total_timesteps%20==0 and args.das == 0:
-			plt.figure()
-			x = list(range(0, len(actor_loss_dev)))
-			plt.subplot(1,2,1)
-			plt.plot(x, actor_loss_dev)
-			plt.title("avg. Actor loss dev over episodes")
-
-			plt.subplot(1,2,2)
-			plt.plot(x, critic_loss_dev)
-			plt.title("avg. Cricic loss dev over episodes")
-			filename_loss = "results/figures/" + filename + "_loss"
-			plt.savefig(filename_loss)
-			plt.close()
-
-	# Final evaluation
-	evaluations.append(evaluate_policy(policy))
-	if args.save_models: policy.save("%s" % (filename), directory="./pytorch_models")
-np.save("./results/%s" % (filename), evaluations)
+		# check memory consumption and clear memory
+		gc.collect()
+		# process = psutil.Process(os.getpid())
+		# print(process.memory_info().rss)

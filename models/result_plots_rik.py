@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('agg')
+# matplotlib.use('agg')
 import pickle
 import matplotlib.pyplot as plt
 # from scipy.optimize import minimize
@@ -28,10 +28,6 @@ MAXSTEPS = 600
 def var(tensor, volatile=False):
 	return Variable(tensor, volatile=volatile)
 
-	# if torch.cuda.is_available():
-	# 	return Variable(tensor, volatile=volatile).cuda()
-	# else:
-	# 	return Variable(tensor, volatile=volatile)
 
 def test_policy(model, critic):
 	env = Dice()
@@ -51,11 +47,13 @@ def test_policy(model, critic):
 		actions.append(action[0])
 		rewards.append(reward)
 
-	plt.figure()
-	x = list(range(0, len(Q_values)))
-	plt.plot(x, Q_values)
-	plt.savefig("Q_values")
-	plt.close()
+	# plot Q values
+	# plt.figure()
+	# x = list(range(0, len(Q_values)))
+	# plt.plot(x, Q_values)
+	# # plt.savefig("Q_values")
+	# # plt.close()
+	# plt.show()
 	return rewards, actions
 
 def test_policy_DP(DP_actions):
@@ -64,13 +62,6 @@ def test_policy_DP(DP_actions):
 	rewards = []
 	counter = 0
 	actions = []
-	K_list = []
-	M_AT_list = []
-	M_UP_list = []
-	M_LO_list = []
-	T_AT_list = []
-	T_LO_list = []
-	time_list = []
 	for step in range(len(DP_actions)):
 		# 10 is the stepsize
 		for t in range(10):
@@ -84,23 +75,10 @@ def test_policy_DP(DP_actions):
 			new_state, reward, done  = env.step(action)
 			state = new_state
 			(K, M_AT, M_UP, M_LO, T_AT, T_LO, time) = new_state
-			K_list.append(K)
-			M_AT_list.append(M_AT)
-			M_UP_list.append(M_UP)
-			M_LO_list.append(M_LO)
-			T_AT_list.append(T_AT)
-			T_LO_list.append(T_LO)
-			time_list.append(time)
+			counter += 1
+			# time_list.append(time)
 			actions.append(action)
 			rewards.append(reward)
-			counter += 1
-	# print("K mean/std: ", np.mean(K_list), np.std(K_list))
-	# print("M_AT mean/std: ", np.mean(M_AT_list), np.std(M_AT_list))
-	# print("M_UP mean/std: ",np.mean(M_UP_list), np.std(M_UP_list))
-	# print("M_LO mean/std: ",np.mean(M_LO_list), np.std(M_LO_list))
-	# print("T_AT mean/std: ",np.mean(T_AT_list), np.std(T_AT_list))
-	# print("T_LO mean/std: ",np.mean(T_LO_list), np.std(T_LO_list))
-	# print("time mean/std: ",np.mean(time_list), np.std(time_list))
 	return rewards, actions
 
 def random_policy():
@@ -119,65 +97,63 @@ def random_policy():
 def make_stats(policy_rewards, policy_actions, random_rewards, random_actions, DP_rewards, DP_actions, dp=False):
 	print("The sum of rewards of the TRAINED policy is: ", sum(policy_rewards))
 	print("The sum of rewards of the RANDOM policy is: ", sum(random_rewards))
-	print("The sum of rewards of the DP policy is: ", sum(DP_rewards))
+	print("The sum of rewards of the OPTIMAL policy is: ", sum(DP_rewards))
 
 	timevec = list(range(2005, 2005+MAXSTEPS))
-	plt.figure()
 
-	plt.subplot(3,2,1)
+	print(len(DP_rewards))
+	print(len(random_rewards))
+	print(len(policy_rewards))
+
 	random_difference = [random_rewards[i] - DP_rewards[i] for i in range(len(policy_rewards))]
+	policy_difference = [policy_rewards[i] - DP_rewards[i] for i in range(len(policy_rewards))]
+	DP_difference = [ DP_rewards[i] - DP_rewards[i] for i in range(len(policy_rewards))]
 
-	plt.plot(timevec, random_difference)
-	plt.title("Reward for random policy minus DP policy")
 
-	plt.subplot(3,2,2)
+	plt.figure()
+	plt.subplot(3,2,1)
 	plt.plot(timevec, random_actions)
-	plt.title('Mu (action) for random policy')
-
+	plt.title("Random policy")
 
 	plt.subplot(3,2,3)
-	policy_difference = [policy_rewards[i] - DP_rewards[i] for i in range(len(policy_rewards))]
-	plt.plot(timevec, policy_difference)
-	plt.title("Rewards for trained policy minus DP rewards")
+	plt.plot(timevec, policy_actions)
+	plt.title('DDPG policy')
+
+	plt.subplot(3,2,5)
+	plt.plot(timevec, DP_actions)
+	plt.title("Optimal policy")
+
+	plt.subplot(3,2,2)
+	plt.plot(timevec, random_difference)
+	plt.title("Non-utilized reward")
 
 	plt.subplot(3,2,4)
-	plt.plot(timevec, policy_actions)
-	plt.title('Mu (action) for trained policy')
+	plt.plot(timevec, policy_difference)
+	plt.title('Non-utilized reward')
 
-	if dp == True:
-		plt.subplot(3,2,5)
-		plt.plot(timevec, DP_rewards)
-		plt.title("Rewards for DP policy")
+	plt.subplot(3,2,6)
+	plt.plot(timevec, DP_difference)
+	plt.title("Non-utilized reward")
 
-
-		plt.subplot(3,2,6)
-		plt.plot(timevec, DP_actions)
-		plt.title('Mu (action) for DP policy')
-
-	filename_reward = "test_figure"
 	plt.tight_layout()
-	plt.savefig(filename_reward)
-	plt.close()
-
+	# plt.savefig('result1')
+	# plt.close()
+	plt.show()
 
 if __name__ == '__main__':
-	evaluate_episode_number = sys.argv[1]
+	# evaluate_episode_number = sys.argv[1]
 	# show results of dp, works only for t_max=600
 	dp = True
 	model = Actor(7, 1, 1)
 	critic = Critic(7, 1)
 
 	# Adjust model to load:
-	# model.load_state_dict(torch.load('Models/' + str(evaluate_episode_number) + '_actor.pt'))
 
-	model_name = 'actor_RUN-8_user-bestmodel_MEps-100_Bsize-128_LRac-1e-05_LRcr-0.006_Tau-0.001_maxBuf-20000_explRt-0.2.pt'
-	model.load_state_dict(torch.load('Models/' +model_name))
+	file = 'actor_RUN-3_user-mse10_MEps-100_Bsize-128_LRac-1e-05_LRcr-0.006_Tau-0.001_maxBuf-20000_explRt-0.2.pt'
+	model.load_state_dict(torch.load('Models/' + file ))
 	model.eval()
 
-	# model_name = '140_critic_user-hyperLR_MEps-200_Bsize-128_LRac-0.001_LRcr-0.001_Tau-0.001_maxBuf-20000_explRt-0.2.pt'
-	model_name = model_name.replace('actor', 'critic')
-	# critic.load_state_dict(torch.load('Models/' + str(evaluate_episode_number) + '_critic.pt'))
-	critic.load_state_dict(torch.load('Models/' + model_name))
+	critic.load_state_dict(torch.load('Models/' + file.replace('actor','critic')))
 	critic.eval()
 	# random model, does not need actor model since policy is random
 	random_rewards, random_actions = random_policy()

@@ -1,38 +1,52 @@
 import numpy as np
+import torch
+import shutil
+import torch.autograd as Variable
 
-# Code based on:
-# https://github.com/openai/baselines/blob/master/baselines/deepq/replay_buffer.py
 
-# Simple replay buffer
-class ReplayBuffer(object):
-	def __init__(self):
-		self.storage = []
-		self.max_size = 10000
+def soft_update(target, source, tau):
+	"""
+	Copies the parameters from source network (x) to target network (y) using the below update
+	y = TAU*x + (1 - TAU)*y
+	:param target: Target network (PyTorch)
+	:param source: Source network (PyTorch)
+	:return:
+	"""
+	for target_param, param in zip(target.parameters(), source.parameters()):
+		target_param.data.copy_(
+			target_param.data * (1.0 - tau) + param.data * tau
+		)
 
-	# Expects tuples of (state, next_state, action, reward, done)
-	def add(self, data):
-		self.storage.append(data)
 
-	def sample(self, batch_size=100):
-		if len(self.storage) > self.max_size:
-			self.storage = self.storage[-self.max_size:]
-		ind = np.random.randint(0, len(self.storage), size=batch_size)
-		x, y, u, r, d = [], [], [], [], []
+def hard_update(target, source):
+	"""
+	Copies the parameters from source network to target network
+	:param target: Target network (PyTorch)
+	:param source: Source network (PyTorch)
+	:return:
+	"""
+	for target_param, param in zip(target.parameters(), source.parameters()):
+			target_param.data.copy_(param.data)
 
-		for i in ind:
-			X, Y, U, R, D = self.storage[i]
-			x.append(np.array(X, copy=False))
-			y.append(np.array(Y, copy=False))
-			u.append(np.array(U, copy=False))
-			r.append(np.array(R, copy=False))
-			d.append(np.array(D, copy=False))
-		return np.array(x), np.array(y), np.array(u).reshape(batch_size, 1), np.array(r).reshape(-1, 1), np.array(d).reshape(-1, 1)
+
+def save_training_checkpoint(state, is_best, episode_count):
+	"""
+	Saves the models, with all training parameters intact
+	:param state:
+	:param is_best:
+	:param filename:
+	:return:
+	"""
+	filename = str(episode_count) + 'checkpoint.path.rar'
+	torch.save(state, filename)
+	if is_best:
+		shutil.copyfile(filename, 'model_best.pth.tar')
 
 
 # Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 class OrnsteinUhlenbeckActionNoise:
 
-	def __init__(self, action_dim, mu = 0, theta = 0.15, sigma = 0.1):
+	def __init__(self, action_dim, mu = 0, theta = 0.15, sigma = 0.2):
 		self.action_dim = action_dim
 		self.mu = mu
 		self.theta = theta
@@ -42,8 +56,25 @@ class OrnsteinUhlenbeckActionNoise:
 	def reset(self):
 		self.X = np.ones(self.action_dim) * self.mu
 
-	def sample(self):
+	def sample(self, eps):
+
 		dx = self.theta * (self.mu - self.X)
-		dx = dx + self.sigma * np.random.randn(len(self.X))
+		if eps>50:
+			dx = dx + self.sigma/(eps-50) * np.random.randn(len(self.X))
+		else:
+			dx = dx + self.sigma * np.random.randn(len(self.X))
+
 		self.X = self.X + dx
 		return self.X
+
+
+# use this to plot Ornstein Uhlenbeck random motion
+if __name__ == '__main__':
+	ou = OrnsteinUhlenbeckActionNoise(1)
+	states = []
+	for i in range(1000):
+		states.append(ou.sample())
+	import matplotlib.pyplot as plt
+
+	plt.plot(states)
+	plt.show()
